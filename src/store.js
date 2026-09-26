@@ -46,8 +46,8 @@ export const CLOSE_REASONS = [
 export const PEOPLE = {
   vpSupport: { name: 'Moshe L.', title: 'VP Support', slackId: 'U04MOSHEL' },
   solutionsEngineers: [
-    { name: 'Yael M.', title: 'Solutions Engineer', slackId: 'U04YAELM', email: 'yael.m@reeco.com.invalid' },
-    { name: 'Omer T.', title: 'Solutions Engineer', slackId: 'U04OMERT', email: 'omer.t@reeco.com.invalid' },
+    { name: 'Yael M.', title: 'Solutions Engineer', slackId: 'U04YAELM', email: 'yael.m@frontline.com.invalid' },
+    { name: 'Omer T.', title: 'Solutions Engineer', slackId: 'U04OMERT', email: 'omer.t@frontline.com.invalid' },
   ],
 };
 
@@ -62,41 +62,41 @@ export const STAGE_GATES = {
   qualifiedtobuy: {
     title: 'Qualify the deal', why: 'So everyone knows why they buy and who decides.',
     fields: [
-      { id: 'pain', label: 'Main pain', type: 'textarea', hs: 'reeco_pain', placeholder: 'What hurts today, in their words' },
-      { id: 'properties', label: 'Properties in scope', type: 'number', hs: 'reeco_properties' },
-      { id: 'erp', label: 'ERP / accounting system', type: 'select', options: ERPS, hs: 'reeco_erp' },
-      { id: 'decisionMaker', label: 'Decision maker', type: 'text', hs: 'reeco_decision_maker', placeholder: 'Name, title' },
+      { id: 'pain', label: 'Main pain', type: 'textarea', hs: 'hub_pain', placeholder: 'What hurts today, in their words' },
+      { id: 'properties', label: 'Properties in scope', type: 'number', hs: 'hub_properties' },
+      { id: 'erp', label: 'ERP / accounting system', type: 'select', options: ERPS, hs: 'hub_erp' },
+      { id: 'decisionMaker', label: 'Decision maker', type: 'text', hs: 'hub_decision_maker', placeholder: 'Name, title' },
     ],
   },
   presentationscheduled: {
     title: 'Set up the demo', why: "It's time to loop in a Solutions Engineer. They get these details in Slack.",
     fields: [
-      { id: 'demoDate', label: 'Demo date & time', type: 'datetime-local', hs: 'reeco_demo_date' },
-      { id: 'se', label: 'Solutions Engineer', type: 'select', options: PEOPLE.solutionsEngineers.map((p) => p.name), hs: 'reeco_solutions_engineer' },
-      { id: 'useCases', label: 'What to show', type: 'multi', options: MODULES, hs: 'reeco_demo_use_cases' },
-      { id: 'attendees', label: 'Who will attend', type: 'text', hs: 'reeco_demo_attendees', placeholder: 'Names and roles' },
+      { id: 'demoDate', label: 'Demo date & time', type: 'datetime-local', hs: 'hub_demo_date' },
+      { id: 'se', label: 'Solutions Engineer', type: 'select', options: PEOPLE.solutionsEngineers.map((p) => p.name), hs: 'hub_solutions_engineer' },
+      { id: 'useCases', label: 'What to show', type: 'multi', options: MODULES, hs: 'hub_demo_use_cases' },
+      { id: 'attendees', label: 'Who will attend', type: 'text', hs: 'hub_demo_attendees', placeholder: 'Names and roles' },
     ],
   },
   decisionmakerboughtin: {
     title: 'Confirm the champion', why: 'A named champion and an agreed business value keep the deal moving.',
     fields: [
-      { id: 'champion', label: 'Champion', type: 'text', hs: 'reeco_champion', placeholder: 'Name, title' },
-      { id: 'businessValue', label: 'Business value ($ per year)', type: 'number', hs: 'reeco_business_value', hint: 'The savings the customer agreed to, e.g. food cost and AP hours' },
+      { id: 'champion', label: 'Champion', type: 'text', hs: 'hub_champion', placeholder: 'Name, title' },
+      { id: 'businessValue', label: 'Business value ($ per year)', type: 'number', hs: 'hub_business_value', hint: 'The savings the customer agreed to, e.g. food cost and AP hours' },
     ],
   },
   contractsent: {
     title: 'Send the contract', why: 'The signer and legal contact up front, so nothing waits on email ping-pong.',
     fields: [
-      { id: 'signer', label: 'Signer', type: 'text', hs: 'reeco_signer', placeholder: 'Name, title' },
+      { id: 'signer', label: 'Signer', type: 'text', hs: 'hub_signer', placeholder: 'Name, title' },
       { id: 'closeDate', label: 'Target close date', type: 'date', hs: 'closedate' },
-      { id: 'legalContact', label: 'Legal contact', type: 'text', hs: 'reeco_legal_contact', placeholder: 'Name or email' },
+      { id: 'legalContact', label: 'Legal contact', type: 'text', hs: 'hub_legal_contact', placeholder: 'Name or email' },
     ],
   },
   closedlost: {
     title: 'Why was it lost?', why: 'Loss reasons feed the win/loss report in Snowflake.',
     fields: [
       { id: 'lostReason', label: 'Reason', type: 'select', options: LOST_REASONS, hs: 'closed_lost_reason' },
-      { id: 'competitor', label: 'Competitor', type: 'text', hs: 'reeco_competitor', requiredIf: ['lostReason', 'Went with a competitor'] },
+      { id: 'competitor', label: 'Competitor', type: 'text', hs: 'hub_competitor', requiredIf: ['lostReason', 'Went with a competitor'] },
     ],
   },
 };
@@ -106,14 +106,14 @@ export const STAGE_DAYS = { appointmentscheduled: 14, qualifiedtobuy: 14, presen
 export const SILENT_DAYS = { flag: 7, high: 14 };
 
 export const USERS = [
-  { id: 'maya', email: 'maya.k@reeco.com.invalid', name: 'Maya K.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04MAYAK' },
-  { id: 'noa', email: 'noa.r@reeco.com.invalid', name: 'Noa R.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04NOAR' },
-  { id: 'daniel', email: 'daniel.p@reeco.com.invalid', name: 'Daniel P.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04DANIELP' },
-  { id: 'eitan', email: 'eitan.b@reeco.com.invalid', name: 'Eitan B.', role: 'Sales Manager', team: 'sales', access: 'manager', approver: true, slackId: 'U04EITANB' },
-  { id: 'ron', email: 'ron.a@reeco.com.invalid', name: 'Ron A.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823101' },
-  { id: 'tal', email: 'tal.g@reeco.com.invalid', name: 'Tal G.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823114' },
-  { id: 'dana', email: 'dana.s@reeco.com.invalid', name: 'Dana S.', role: 'Customer Success', team: 'cs', access: 'cs', slackId: 'U04DANAS' },
-  { id: 'alex', email: 'alex.m@reeco.com.invalid', name: 'Alex M.', role: 'Admin', team: 'admin', access: 'admin' },
+  { id: 'maya', email: 'maya.k@frontline.com.invalid', name: 'Maya K.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04MAYAK' },
+  { id: 'noa', email: 'noa.r@frontline.com.invalid', name: 'Noa R.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04NOAR' },
+  { id: 'daniel', email: 'daniel.p@frontline.com.invalid', name: 'Daniel P.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04DANIELP' },
+  { id: 'eitan', email: 'eitan.b@frontline.com.invalid', name: 'Eitan B.', role: 'Sales Manager', team: 'sales', access: 'manager', approver: true, slackId: 'U04EITANB' },
+  { id: 'ron', email: 'ron.a@frontline.com.invalid', name: 'Ron A.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823101' },
+  { id: 'tal', email: 'tal.g@frontline.com.invalid', name: 'Tal G.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823114' },
+  { id: 'dana', email: 'dana.s@frontline.com.invalid', name: 'Dana S.', role: 'Customer Success', team: 'cs', access: 'cs', slackId: 'U04DANAS' },
+  { id: 'alex', email: 'alex.m@frontline.com.invalid', name: 'Alex M.', role: 'Admin', team: 'admin', access: 'admin' },
 ];
 
 // 12 weeks of weekly product usage (oldest → newest), as Snowflake's PRODUCT.WEEKLY_USAGE would return it.
@@ -237,7 +237,7 @@ function seedAccounts() {
       tickets: [],
       conversations: [
         { id: '215469240', subject: 'Vendor price differs from catalog', state: 'open', assignee: 'Tal G.', updatedAt: ago(1), slaDueAt: inH(3), messages: [
-          { from: 'customer', author: 'Ana Lopez', text: 'Sysco invoice shows $4.20/lb for chicken breast but our catalog says $3.85. Can Reeco flag these automatically?', at: ago(1) },
+          { from: 'customer', author: 'Ana Lopez', text: 'Sysco invoice shows $4.20/lb for chicken breast but our catalog says $3.85. Can Frontline flag these automatically?', at: ago(1) },
         ] },
         closed('215467002', 'Invoice OCR misread quantity', 'Ana Lopez', 'Ron A.', 'bug_fixed', 24 * 6,
           'The AI read 12 cases as 120 on a US Foods invoice.', 'Thanks for flagging. The fix shipped in 4.18.2 and I corrected that invoice.'),
@@ -264,8 +264,8 @@ function seedAccounts() {
       onboarding: { startedAt: ago(24 * 420), completedAt: ago(24 * 380), slackChannel: '#onb-alder-main', jiraEpic: 'ONB-044', steps: steps(ONBOARDING_STEPS.map((s) => s.id)) },
       tickets: [],
       conversations: [
-        closed('215465902', 'Two properties stopped using Reeco', 'Jordan Pike', 'Tal G.', 'how_to', 24 * 18,
-          'Our Portland and Bend GMs say ordering in Reeco takes longer than email. How do we speed it up?', 'Sent the order-guide templates and booked a 20-min refresher for both GMs.'),
+        closed('215465902', 'Two properties stopped using Frontline', 'Jordan Pike', 'Tal G.', 'how_to', 24 * 18,
+          'Our Portland and Bend GMs say ordering in Frontline takes longer than email. How do we speed it up?', 'Sent the order-guide templates and booked a 20-min refresher for both GMs.'),
       ],
       notes: [{ text: 'Champion (Sam, former Ops VP) left in August. Jordan is new and still evaluating tools.', author: 'Dana S.', at: ago(24 * 30) }],
     },
@@ -333,7 +333,7 @@ const DEAL_EXTRAS = {
   'olive-court': {
     closeDate: inDays(20), stageEnteredAt: ago(24 * 12), modules: ['P2P ordering'],
     fields: { pain: 'Orders from 12 vendors by email and spreadsheets', properties: 1, erp: 'QuickBooks', decisionMaker: 'Marco Rossi, GM' },
-    activities: [act('email', 'out', 4, 'Following up on pricing'), act('email', 'in', 9, 'Re: Reeco for The Olive Court'), act('meeting', 'in', 13, 'Intro call')],
+    activities: [act('email', 'out', 4, 'Following up on pricing'), act('email', 'in', 9, 'Re: Frontline for The Olive Court'), act('meeting', 'in', 13, 'Intro call')],
   },
   northgate: {
     closeDate: inDays(45), stageEnteredAt: ago(24 * 4), modules: ['P2P ordering', 'Inventory & par levels'],
@@ -369,7 +369,7 @@ function seedProspects() {
       contact: { name: 'Sam Price', role: 'Owner', email: 'sam@copperkettleinn.com.invalid' },
       deal: { id: '18840602', name: 'Copper Kettle: single property', amount: 7200, stage: 'appointmentscheduled', discountPct: 0,
         closeDate: inDays(40), stageEnteredAt: ago(24 * 2), modules: ['P2P ordering'], fields: {},
-        activities: [act('email', 'in', 1, 'Demo request from reeco.com')] },
+        activities: [act('email', 'in', 1, 'Demo request from frontline.com')] },
     }),
     prospect({
       id: 'pacific-crest', name: 'Pacific Crest Hotels', domain: 'pacificcresthotels.com', segment: 'Enterprise', properties: 22, region: 'US West', owner: 'Noa R.', hubspotCompanyId: '9120034745',
@@ -442,7 +442,7 @@ export function reset() {
   }
   const rs = db.accounts.find((a) => a.id === 'riverstone');
   const demoAt = new Date(rs.deal.fields.demoDate + ':00Z');
-  rs.meetings.push({ id: 'mtg_seed_1', title: 'Reeco demo: Riverstone Hospitality Group', start: demoAt.toISOString(), end: new Date(+demoAt + 45 * 60_000).toISOString(),
+  rs.meetings.push({ id: 'mtg_seed_1', title: 'Frontline demo: Riverstone Hospitality Group', start: demoAt.toISOString(), end: new Date(+demoAt + 45 * 60_000).toISOString(),
     link: 'https://meet.google.com/qmx-hbrt-kpw', organizer: 'Daniel P.', attendees: ['Chris Allen', 'Yael M.', 'Daniel P.'], createdAt: new Date(Date.now() - 2 * 86400_000).toISOString() });
   db.wonDeals = seedWonDeals();
   for (const a of db.accounts) {

@@ -92,7 +92,7 @@ export function followUpDraft(a) {
   };
   return {
     to: `${a.contact.name} <${a.contact.email}>`,
-    subject: last ? `Re: ${last.subject.replace(/^Re:\s*/i, '')}` : `Reeco for ${a.name}`,
+    subject: last ? `Re: ${last.subject.replace(/^Re:\s*/i, '')}` : `Frontline for ${a.name}`,
     body: `Hi ${name},\n\nI wanted to check in on ${a.deal.name.split(':')[0]}. Would ${nextByStage[a.deal.stage] ?? 'a quick call'} be useful?\n\nIf the timing has changed on your side, just let me know and I'll follow up later.\n\nBest,\n${a.owner}`,
   };
 }

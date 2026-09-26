@@ -9,8 +9,8 @@ const MODEL = () => process.env.CLAUDE_MODEL || 'claude-opus-5';
 let client;
 const getClient = () => (client ??= new Anthropic());
 
-const SYSTEM = `You help support agents at Reeco, an AI procure-to-pay platform for hotels (purchasing, receiving, inventory, AP automation, ERP sync to NetSuite / Sage Intacct / QuickBooks).
-Support's job is resolving problems customers hit on the Reeco platform.
+const SYSTEM = `You help support agents at Frontline, an AI procure-to-pay platform for hotels (purchasing, receiving, inventory, AP automation, ERP sync to NetSuite / Sage Intacct / QuickBooks).
+Support's job is resolving problems customers hit on the Frontline platform.
 Given one customer conversation plus account context, return:
 - summary: at most two sentences an agent can read in five seconds. State the problem and what the customer wants.
 - sentiment: the customer's current mood.

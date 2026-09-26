@@ -80,7 +80,7 @@ async function bookDemo(a, actor, tz) {
   const at = f.demoDate ? new Date(`${f.demoDate}:00Z`) : null;
   if (!at || +at < Date.now()) return null; // no date, or already in the past: nothing to invite to
   const { meeting } = await scheduleMeeting(a.id, {
-    title: `Reeco demo: ${a.name}`, start: at.toISOString(), minutes: 45, tz,
+    title: `Frontline demo: ${a.name}`, start: at.toISOString(), minutes: 45, tz,
     team: [f.se, a.owner].filter(Boolean), withContact: true,
     agenda: `What we'll show: ${(f.useCases ?? []).join(', ') || 'to be agreed'}\nAttendees: ${f.attendees || 'to be confirmed'}\nERP: ${f.erp || 'n/a'} · ${a.properties} properties`,
   }, actor);
@@ -96,7 +96,7 @@ async function loopInSe(a, actor, tz = 'UTC') {
   await slack.dm(se.slackId, se.name, `Demo: ${a.name} on ${fmtDemo(f.demoDate, tz)}`, [
     slack.section(`:tv: *You're on the ${a.name} demo* with ${actor}\n*When:* ${fmtDemo(f.demoDate, tz)}\n*Show:* ${(f.useCases ?? []).join(', ') || 'to be agreed'}\n*Attendees:* ${f.attendees || 'to be confirmed'}`),
     slack.section(`*Pain:* ${f.pain || 'n/a'}\n*ERP:* ${f.erp || 'n/a'} · ${a.properties} properties · ${money(a.deal.amount)} ARR`),
-    slack.context(`<${hubUrl(`/accounts/${a.id}`)}|Open in Reeco Hub>`),
+    slack.context(`<${hubUrl(`/accounts/${a.id}`)}|Open in Frontline Hub>`),
   ]);
   return se;
 }
@@ -175,7 +175,7 @@ export async function askColleague(accountId, wonId, actor) {
   failIfRejected(await slack.dm(colleague.slackId, colleague.name, `${actor} would like to learn from your ${w.account} win`, [
     slack.section(`:bulb: *${actor} is working ${a.name}*, which looks a lot like your *${w.account}* win.\n${a.segment} · ${a.properties} properties · ${a.deal.fields.erp || 'ERP n/a'} · ${money(a.deal.amount)} ARR · now in ${stageLabel(a.deal.stage)}`),
     slack.section(`*${w.account}:* ${w.value}.\n_What worked:_ ${w.how}.\nCould you share what made it click? 15 minutes would help.`),
-    slack.context(`<${hubUrl(`/accounts/${a.id}`)}|Open ${a.name} in Reeco Hub>`),
+    slack.context(`<${hubUrl(`/accounts/${a.id}`)}|Open ${a.name} in Frontline Hub>`),
   ]));
   a.deal.askedColleague = { wonId, at: now() };
   await track('deal.asked_colleague', a.id, actor, { wonId, colleague: colleague.name });
@@ -189,7 +189,7 @@ async function kickOffOnboarding(a, actor) {
   const ch = slack.channels();
   await slack.postMessage(ch.deals, `Closed won: ${a.name} (${money(a.deal.amount)} ARR)`, [
     slack.section(`:tada: *Closed won: ${a.name}*\n${money(a.deal.amount)} ARR · ${a.properties} properties · ${a.segment}`),
-    slack.context(`AE: ${actor} · CSM: ${a.csm} · <${hubUrl(`/accounts/${a.id}`)}|Open in Reeco Hub>`),
+    slack.context(`AE: ${actor} · CSM: ${a.csm} · <${hubUrl(`/accounts/${a.id}`)}|Open in Frontline Hub>`),
   ], 'Announce win');
 
   const epic = await jira.createIssue({
@@ -204,7 +204,7 @@ async function kickOffOnboarding(a, actor) {
   await slack.postMessage(channelId, `Onboarding kickoff for ${a.name}`, [
     slack.section(`:rocket: *Onboarding kickoff: ${a.name}*\nCSM *${a.csm}* · Jira epic *${epic.response?.key ?? 'n/a'}*`),
     slack.section(ONBOARDING_STEPS.map((s) => `☐ ${s.label}`).join('\n')),
-    slack.context(`Steps marked auto are ticked from Snowflake usage. <${hubUrl(`/accounts/${a.id}`)}|Track in Reeco Hub>`),
+    slack.context(`Steps marked auto are ticked from Snowflake usage. <${hubUrl(`/accounts/${a.id}`)}|Track in Frontline Hub>`),
   ], 'Kickoff checklist', `#${channelName}`);
 
   a.status = 'Onboarding';
@@ -277,7 +277,7 @@ export async function decideApproval(approvalId, decision, actor, via = 'hub') {
   const icon = decision === 'approved' ? ':white_check_mark:' : ':x:';
   await slack.updateMessage(p.slack.channel, p.slack.ts, `Discount ${decision}: ${a.name} ${p.pct}%`, [
     slack.section(`${icon} *${a.name}: ${p.pct}% discount ${decision}* by ${actor}`),
-    slack.context(`Requested by ${p.requestedBy} · decided ${via === 'slack' ? 'in Slack' : 'in Reeco Hub'}`),
+    slack.context(`Requested by ${p.requestedBy} · decided ${via === 'slack' ? 'in Slack' : 'in Frontline Hub'}`),
   ]);
   await track(`discount.${decision}`, a.id, actor, { pct: p.pct, approvalId: p.id, via });
   announce(decision === 'approved'
@@ -305,7 +305,7 @@ export async function openTicket(accountId, { summary, description, priority }, 
   need(summary?.trim(), 400, 'Summary is required');
   const entry = await jira.createIssue({
     summary: `[${a.name}] ${summary.trim()}`,
-    description: `${description || ''}\n\nOpened by ${actor} from Reeco Hub. Account: ${a.domain}, ${a.segment}, ${a.properties} properties.`,
+    description: `${description || ''}\n\nOpened by ${actor} from Frontline Hub. Account: ${a.domain}, ${a.segment}, ${a.properties} properties.`,
     priority: priority || 'Medium',
     labels: ['customer-reported'],
   });
@@ -437,7 +437,7 @@ function heuristicAssist(a, c, agentName) {
     : has(/how do|where do|how can|\?/) ? 'confused' : 'calm';
   const category = has(/netsuite|intacct|quickbooks|sync|gl code|erp/) ? 'integration'
     : has(/duplicate|error|502|broken|misread|wrong|failing/) ? 'bug_workaround'
-    : has(/can reeco|feature|would be great|automatically/) ? 'feature_request'
+    : has(/can frontline|feature|would be great|automatically/) ? 'feature_request'
     : has(/billing|pricing|seats?|contract/) ? 'account_billing' : 'how_to';
   const ticket = c.escalatedTo ?? a.tickets.find((t) => t.status !== 'Done' && !t.key.startsWith('ONB'))?.key;
   const sentence = last.text.split(/(?<=[.?!])\s/)[0];
@@ -451,9 +451,9 @@ function heuristicAssist(a, c, agentName) {
     account_billing: `Loop in ${a.owner} for anything commercial.`,
   };
   const replies = {
-    integration: `Hi ${first}, thanks for flagging this, and sorry for the hassle. I can see the ${a.platform?.erp ?? 'ERP'} sync issue on our side${ticket ? ` and it's already with engineering under ${ticket}` : ''}. I'm checking your sync logs now and will update you as soon as I know more. In the meantime, nothing is lost on the Reeco side.\n\n${agent}`,
+    integration: `Hi ${first}, thanks for flagging this, and sorry for the hassle. I can see the ${a.platform?.erp ?? 'ERP'} sync issue on our side${ticket ? ` and it's already with engineering under ${ticket}` : ''}. I'm checking your sync logs now and will update you as soon as I know more. In the meantime, nothing is lost on the Frontline side.\n\n${agent}`,
     bug_workaround: `Hi ${first}, I'm sorry, that shouldn't happen, and I understand the manual work it's causing your team. ${ticket ? `Engineering is actively working on it (${ticket}). ` : ''}While they finish the fix, I'll clean up the affected records for you and keep you posted.\n\n${agent}`,
-    feature_request: `Hi ${first}, great question. Reeco doesn't do that automatically yet. I've shared your use case with our product team, and I'll let you know if it makes the roadmap. Happy to show you the closest option we have today.\n\n${agent}`,
+    feature_request: `Hi ${first}, great question. Frontline doesn't do that automatically yet. I've shared your use case with our product team, and I'll let you know if it makes the roadmap. Happy to show you the closest option we have today.\n\n${agent}`,
     how_to: `Hi ${first}, happy to help! You can set this up under Settings, and I'm sending a short guide with the steps. If it's easier, I can walk you through it on a 10-minute call.\n\n${agent}`,
     account_billing: `Hi ${first}, thanks for reaching out. I've looped in ${a.owner}, your account manager, who will follow up today.\n\n${agent}`,
   };
@@ -524,7 +524,7 @@ function postEscalation(a, c, headline) {
   return slack.postMessage(slack.channels().support, `${a.name}: ${c.subject}`, [
     slack.section(`${headline}\n*${a.name}* · ${a.segment} · ${money(a.deal.amount)} ARR · health ${a.health ?? 'n/a'}\ncc <@${vp.slackId}> (${vp.title})`),
     slack.section(`> ${last?.text ?? ''}`),
-    slack.context(`<${hubUrl(`/inbox/${c.id}`)}|Open in Reeco Hub>`),
+    slack.context(`<${hubUrl(`/inbox/${c.id}`)}|Open in Frontline Hub>`),
   ], 'Escalation');
 }
 
@@ -581,7 +581,7 @@ export async function checkSla() {
     for (const c of a.conversations) {
       if (c.state !== 'open' || !c.slaDueAt || c.slaAlerted || new Date(c.slaDueAt) > new Date()) continue;
       c.slaAlerted = true;
-      await withActivity('Reeco Hub', async () => {
+      await withActivity('Frontline Hub', async () => {
         await postEscalation(a, c, `:alarm_clock: *SLA breached* (${CONFIG.slaHours[a.segment]}h target, ${a.segment})`);
         await track('sla.breached', a.id, 'system', { conversationId: c.id });
         announce(`${first(customerOf(c))} at ${a.name} has waited longer than the ${CONFIG.slaHours[a.segment]}h target. ${PEOPLE.vpSupport.name} (${PEOPLE.vpSupport.title}) was notified.`, { icon: 'i-clock', tone: 'bad', accountId: a.id });
@@ -668,7 +668,7 @@ async function maybeGoLive(a, actor) {
   a.status = 'Live';
   a.onboarding.completedAt = now();
   await slack.postMessage(slack.channels().deals, `${a.name} is live`, [
-    slack.section(`:checkered_flag: *${a.name} completed onboarding* and is live on Reeco`),
+    slack.section(`:checkered_flag: *${a.name} completed onboarding* and is live on Frontline`),
     slack.context(`CSM: ${a.csm}`),
   ], 'Go-live');
   await track('onboarding.completed', a.id, actor, {});
@@ -722,7 +722,7 @@ export async function detectAnomalies(actor) {
   }
   for (const { a, an } of fresh) {
     const csm = csmOf(a);
-    if (csm) await slack.dm(csm.slackId, csm.name, `Usage anomaly at ${a.name}`, [slack.section(`:chart_with_downwards_trend: *${a.name}*: ${anomalyText(an)}`), slack.context(`<${hubUrl(`/accounts/${a.id}?tab=health`)}|Open in Reeco Hub>`)]);
+    if (csm) await slack.dm(csm.slackId, csm.name, `Usage anomaly at ${a.name}`, [slack.section(`:chart_with_downwards_trend: *${a.name}*: ${anomalyText(an)}`), slack.context(`<${hubUrl(`/accounts/${a.id}?tab=health`)}|Open in Frontline Hub>`)]);
     await track('usage.anomaly_detected', a.id, 'system', { metric: an.metric, change: an.change });
     changed(a.id);
   }
@@ -756,7 +756,7 @@ export async function startSavePlan(accountId, text, actor) {
   if (ae?.slackId) {
     await slack.dm(ae.slackId, ae.name, `${actor} started a save plan for ${a.name}`, [
       slack.section(`:shield: *Save plan: ${a.name}* (health ${a.health}, ${money(a.deal.amount)} ARR)\n${text.trim()}`),
-      slack.context(`Started by ${actor} (CSM) · <${hubUrl(`/accounts/${a.id}?tab=health`)}|Open in Reeco Hub>`),
+      slack.context(`Started by ${actor} (CSM) · <${hubUrl(`/accounts/${a.id}?tab=health`)}|Open in Frontline Hub>`),
     ]);
   }
   a.savePlan = { at: now(), by: actor, text: text.trim() };
@@ -789,8 +789,8 @@ export async function scheduleMeeting(accountId, { title, start, minutes = 30, t
   need(attendees.length > 1, 400, 'Invite at least one other person');
 
   const ev = await google.createEvent({
-    organizer: organizer?.email ?? 'hub@reeco.com.invalid', summary: title.trim(),
-    description: `${agenda.trim() ? `${agenda.trim()}\n\n` : ''}Booked from Reeco Hub · ${a.name}`,
+    organizer: organizer?.email ?? 'hub@frontline.com.invalid', summary: title.trim(),
+    description: `${agenda.trim() ? `${agenda.trim()}\n\n` : ''}Booked from Frontline Hub · ${a.name}`,
     start: startAt.toISOString(), end: endAt.toISOString(), attendees,
   });
   failIfRejected(ev);
@@ -812,7 +812,7 @@ export async function scheduleMeeting(accountId, { title, start, minutes = 30, t
 export async function quickCall(conversationId, text, actor) {
   const { account: a, conversation: c } = getConversation(conversationId);
   need(c.state === 'open', 400, 'This conversation is closed');
-  const space = await google.createSpace(userByName(actor)?.email ?? 'hub@reeco.com.invalid');
+  const space = await google.createSpace(userByName(actor)?.email ?? 'hub@frontline.com.invalid');
   failIfRejected(space);
   const link = space.response.meetingUri;
   const body = `${(text?.trim() || "It might be quicker to talk this through. Can you join me on a short video call?")}\n\n${link}`;
@@ -899,7 +899,7 @@ export async function tellCustomer(frId, accountId, actor) {
   need(r, 404, 'This account did not ask for it');
   need(!r.notified, 409, 'Customer already told');
   const a = getAccount(accountId);
-  failIfRejected(await intercom.message(a.contact.email, a.contact.name, `Hi ${first(a.contact.name)}, good news: “${fr.title}”, which you asked for, is now live in Reeco. Reply here if you'd like a quick walkthrough. ${actor}`));
+  failIfRejected(await intercom.message(a.contact.email, a.contact.name, `Hi ${first(a.contact.name)}, good news: “${fr.title}”, which you asked for, is now live in Frontline. Reply here if you'd like a quick walkthrough. ${actor}`));
   await hubspot.createNote(a.hubspotCompanyId, `Told ${a.contact.name} that “${fr.title}” (${fr.jiraKey}) shipped.`);
   Object.assign(r, { notified: true, notifiedAt: now(), notifiedBy: actor });
   await track('feature_request.customer_told', a.id, actor, { jira: fr.jiraKey });

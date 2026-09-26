@@ -3,7 +3,7 @@
 
 export const CLASSIFICATIONS = [
   { id: 'how_to', label: 'How-to' },
-  { id: 'bug', label: 'Reeco technical issue' },
+  { id: 'bug', label: 'Frontline technical issue' },
   { id: 'integration', label: 'Integration' },
   { id: 'feature_request', label: 'Feature request' },
   { id: 'account_billing', label: 'Account / billing' },
@@ -21,7 +21,7 @@ export function classify(text, account) {
   const tool = TOOLS.find(([re]) => re.test(t))?.[1];
   if (tool || /\bsync|\berp\b|gl code/.test(t)) return { id: 'integration', tool: tool ?? account?.platform?.erp ?? null };
   if (/duplicate|error|\b5\d\d\b|broken|misread|wrong|failing|crash|not loading|slow|bug/.test(t)) return { id: 'bug' };
-  if (/can reeco|feature|\brequest\b|would be great|automatically|roadmap/.test(t)) return { id: 'feature_request' };
+  if (/can frontline|feature|\brequest\b|would be great|automatically|roadmap/.test(t)) return { id: 'feature_request' };
   if (/billing|pricing|seat|contract|renewal|payment|cost/.test(t)) return { id: 'account_billing' };
   return { id: 'how_to' };
 }

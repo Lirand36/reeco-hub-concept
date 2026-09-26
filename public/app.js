@@ -1,4 +1,4 @@
-// Reeco Hub: front end. Plain JS, no build step: hash routing + template strings.
+// Frontline Hub: front end. Plain JS, no build step: hash routing + template strings.
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -402,7 +402,7 @@ function runDealCta(a, x, btn) {
 
 // ---------- pipeline ----------
 const PRIORITY_RANK = { urgent: 0, high: 1, normal: 2, low: 3 };
-const prefKey = () => `reeco-hub-pipeline-view:${user().id}`;
+const prefKey = () => `frontline-hub-pipeline-view:${user().id}`;
 function pipelineView() {
   try { return localStorage.getItem(prefKey()) || 'board'; } catch { return 'board'; }
 }
@@ -612,7 +612,7 @@ const ACCOUNT_COLS = [
   { id: 'segment', label: 'Segment', val: (a) => a.segment, sm: true },
   { id: 'properties', label: 'Properties', val: (a) => a.properties, sm: true, center: true },
   { id: 'arr', label: 'ARR', val: (a) => a.deal.amount, sm: true, num: true },
-  { id: 'spend', label: 'Spend via Reeco (30d)', val: (a) => a.usage?.spend30d ?? -1, sm: true, num: true },
+  { id: 'spend', label: 'Spend via Frontline (30d)', val: (a) => a.usage?.spend30d ?? -1, sm: true, num: true },
   { id: 'health', label: 'Health', val: (a) => a.health ?? -1 },
   { id: 'open', label: 'Open', val: (a) => a.openConversations + a.openTickets, sm: true },
 ];
@@ -727,7 +727,7 @@ function meetingReady(link, heading, text) {
 function openMeetDialog(a, after = () => route({ keepScroll: true })) {
   const me = user();
   const team = [...new Set([a.owner, a.csm].filter((n) => n && n !== me.name))];
-  const title = me.team === 'support' ? `Quick call: ${a.name}` : me.team === 'cs' ? `Check-in: ${a.name}` : `${a.name} × Reeco`;
+  const title = me.team === 'support' ? `Quick call: ${a.name}` : me.team === 'cs' ? `Check-in: ${a.name}` : `${a.name} × Frontline`;
   const tomorrow = new Date(Date.now() + 86400000); tomorrow.setHours(10, 0, 0, 0);
   let result = null;
   const form = formDialog(`
@@ -1038,7 +1038,7 @@ async function renderAccount(id, query = new URLSearchParams()) {
               <div><div class="muted xs">Active users</div><div class="v num">${compact(a.usage.activeUsers)}</div></div>
               <div><div class="muted xs">Purchase orders (30d)</div><div class="v num">${compact(a.usage.pos30d)}</div></div>
               <div><div class="muted xs">AI-processed invoices (30d)</div><div class="v num">${compact(a.usage.invoicesAi30d)}</div></div>
-              <div><div class="muted xs">Spend via Reeco (30d)</div><div class="v num">${moneyCompact(a.usage.spend30d)}</div></div>
+              <div><div class="muted xs">Spend via Frontline (30d)</div><div class="v num">${moneyCompact(a.usage.spend30d)}</div></div>
               <div><div class="muted xs">Vendors connected</div><div class="v num">${compact(a.usage.vendorsConnected)}</div></div>
             </div>
             <div class="spread" style="margin-top:14px"><span class="muted xs">Last active ${rel(a.usage.lastActive)}</span>
@@ -1914,10 +1914,10 @@ function renderUserChip() {
   $('#user-role').textContent = u.role;
 }
 
-function getTheme() { try { return localStorage.getItem('reeco-hub-theme') || 'system'; } catch { return 'system'; } }
+function getTheme() { try { return localStorage.getItem('frontline-hub-theme') || 'system'; } catch { return 'system'; } }
 function setTheme(t) {
   if (t === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
-  try { localStorage.setItem('reeco-hub-theme', t); } catch {}
+  try { localStorage.setItem('frontline-hub-theme', t); } catch {}
 }
 
 function toggleUserMenu(open) {
@@ -2058,7 +2058,7 @@ async function route({ keepScroll = false } = {}) {
     a.classList.toggle('active', on);
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  document.title = `${TITLES[section] ?? 'Reeco Hub'} · Reeco Hub`;
+  document.title = `${TITLES[section] ?? 'Frontline Hub'} · Frontline Hub`;
   const y = scrollY;
   const navigated = !keepScroll && lastSection !== `${section}/${id ?? ''}`;
   lastSection = `${section}/${id ?? ''}`;
@@ -2094,9 +2094,9 @@ async function init() {
   state.meta = await fetch('/api/meta').then((r) => r.json());
   const sel = $('#user');
   sel.innerHTML = state.meta.users.map((u) => `<option value="${u.id}">${esc(u.name)} · ${esc(u.role)}</option>`).join('');
-  try { const saved = localStorage.getItem('reeco-hub-user'); if (saved && state.meta.users.some((u) => u.id === saved)) sel.value = saved; } catch {}
+  try { const saved = localStorage.getItem('frontline-hub-user'); if (saved && state.meta.users.some((u) => u.id === saved)) sel.value = saved; } catch {}
   sel.addEventListener('change', () => {
-    try { localStorage.setItem('reeco-hub-user', sel.value); } catch {}
+    try { localStorage.setItem('frontline-hub-user', sel.value); } catch {}
     renderUserChip(); applyNav(); refreshBadges();
     // Switching role: land on their Good morning rather than a page they can't use
     if (!canSee((location.hash.split('/')[1] ?? 'home').split('?')[0])) location.hash = '#/home'; else route({ keepScroll: true });
