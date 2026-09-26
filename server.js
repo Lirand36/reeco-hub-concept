@@ -336,6 +336,6 @@ setInterval(() => svc.checkSla().catch((e) => console.error('SLA check failed', 
 setInterval(() => withActivity('Snowflake monitor', () => svc.detectAnomalies('Snowflake monitor'), 'cs').catch((e) => console.error('Anomaly check failed', e)), 30 * 60_000);
 
 server.listen(PORT, () => {
-  console.log(`Reeco Hub → http://localhost:${PORT}`);
+  console.log(`Frontline Hub → http://localhost:${PORT}`);
   console.log(integrations().map((i) => `${i.name}: ${i.live ? 'live' : 'mock'}`).join(' · '));
 });

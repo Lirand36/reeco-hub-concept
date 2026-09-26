@@ -23,7 +23,7 @@ function statement(action, sql, values, mockRows, summary) {
     action,
     summary,
     method: 'POST',
-    url: `https://${c.account || 'reeco'}.snowflakecomputing.com/api/v2/statements`,
+    url: `https://${c.account || 'your-account'}.snowflakecomputing.com/api/v2/statements`,
     headers: { Authorization: `Bearer ${c.token}`, 'X-Snowflake-Authorization-Token-Type': c.tokenType },
     body: { statement: sql, timeout: 30, warehouse: c.warehouse, database: c.database, role: c.role, bindings: bindings(values) },
     live: isLive(),

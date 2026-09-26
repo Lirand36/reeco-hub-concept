@@ -1,4 +1,4 @@
-/* Brand tokens: Reeco palette. #28C888 is the brand fill; text on it is dark for contrast,
+/* Brand tokens: Frontline palette. #28C888 is the brand fill; text on it is dark for contrast,
    and --brand-ink is the readable green for links and text on light surfaces. */
 :root {
   --brand: #28C888;

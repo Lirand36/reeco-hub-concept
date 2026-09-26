@@ -1,8 +1,8 @@
-# Reeco Hub
+# Frontline Hub
 
 > All companies, people and numbers in the demo data are fictional.
 
-Reeco Hub is one internal workspace for Reeco's Sales, Support and Customer Success teams. Reps work in a single UI built around Reeco's world (hotel groups, properties, purchase orders, AI-processed invoices). Behind it, the hub works through the tools Reeco already runs, so nobody has to switch between them:
+Frontline Hub is one internal workspace for Frontline's Sales, Support and Customer Success teams. Reps work in a single UI built around Frontline's world (hotel groups, properties, purchase orders, AI-processed invoices). Behind it, the hub works through the tools Frontline already runs, so nobody has to switch between them:
 
 | System | What the hub does with it |
 |---|---|
@@ -27,7 +27,7 @@ Everything runs in **mock mode** by default: each request is built exactly as th
 ## Deploy to Render (shareable link)
 
 1. Render dashboard → **New** → **Blueprint** → select this repo (it uses `render.yaml`).
-2. Set `PUBLIC_URL` to the service URL once Render assigns it, e.g. `https://reeco-hub.onrender.com`.
+2. Set `PUBLIC_URL` to the service URL once Render assigns it, e.g. `https://your-service.onrender.com`.
 3. Share the link. Demo data lives in memory: it resets on restart, and anyone can reset it from **Connections → Reset demo data**.
 
 On Render's free plan the service sleeps after about 15 minutes idle, and the first visit after that takes around 30 seconds to wake it.
@@ -46,7 +46,7 @@ The same steps, with links, are in the app under the user menu (bottom-left) →
 3. **Support.** Sign in as *Ron A. (Support)* and open **Inbox**.
    - **Queue:** a table of conversations (customer, subject, classification, reply due, owner, last message), most urgent first and sortable by any column, in tabs: Mine / Unassigned / Enterprise / Overdue / All open / Snoozed / Closed. Click a row, or use `J` / `K` and `Enter`, to open it.
    - **Conversation:** one conversation at a time, with **Previous / Next** through the queue. **Assign to me**, change owner, or **Snooze** (1h, 4h, tomorrow). A snoozed conversation wakes up when the customer replies. Closing or snoozing moves on to the next one. Every change syncs to Intercom.
-   - **Classification:** every conversation is classified when it arrives: How-to, Reeco technical issue, Integration (naming the tool: NetSuite, Sage Intacct, QuickBooks…), Feature request, or Account / billing. Agents can correct it from the conversation; AI assist refines it. Each card shows three lines: reply due, classification, owner.
+   - **Classification:** every conversation is classified when it arrives: How-to, Frontline technical issue, Integration (naming the tool: NetSuite, Sage Intacct, QuickBooks…), Feature request, or Account / billing. Agents can correct it from the conversation; AI assist refines it. Each card shows three lines: reply due, classification, owner.
    - **Account snapshot:** a one-line strip above the conversation (health, ARR, ERP sync status, open tickets, CSM). Click it for the full snapshot in a side panel: platform status from Snowflake (ERP, sync status, errors in 24h, app version), open Jira tickets, and past conversations with their close reasons.
    - **✨ AI assist:** one click gives a summary, the customer's mood, the likely category, a next step and a draft reply (Claude via the Anthropic API, or a rules-based stand-in in mock mode). **Use this reply** puts the draft in the reply box.
    - **Close with a reason:** closing always asks why (the AI's suggested category is preselected). The reason is tagged in Intercom and logged to Snowflake. The **Closed** tab charts why customers contact support.
