@@ -57,3 +57,24 @@ export function logEmail(dealId, { to, subject, body }) {
     mockResponse: () => ({ id: String(Math.floor(Math.random() * 1e10)), createdAt: new Date().toISOString() }),
   });
 }
+
+// Logs a meeting on the company (association 188 = meeting → company) and the deal (212 = meeting → deal).
+export function logMeeting(companyId, dealId, { title, body, start, end, link }) {
+  return send({
+    system: 'hubspot',
+    action: 'Log meeting',
+    summary: `Logged the meeting “${title}” on the company${dealId ? ' and the deal' : ''}`,
+    method: 'POST',
+    url: `${BASE}/crm/v3/objects/meetings`,
+    headers: auth(),
+    body: {
+      properties: { hs_timestamp: start, hs_meeting_title: title, hs_meeting_body: body, hs_meeting_start_time: start, hs_meeting_end_time: end, hs_meeting_location: link, hs_meeting_outcome: 'SCHEDULED' },
+      associations: [
+        { to: { id: companyId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 188 }] },
+        ...(dealId ? [{ to: { id: dealId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 212 }] }] : []),
+      ],
+    },
+    live: isLive(),
+    mockResponse: () => ({ id: String(Math.floor(Math.random() * 1e10)), createdAt: new Date().toISOString() }),
+  });
+}

@@ -11,6 +11,7 @@ const SYSTEMS = {
   slack: { name: 'Slack', color: 'var(--slack)', letter: 'S' },
   snowflake: { name: 'Snowflake', color: 'var(--snowflake)', letter: 'SF' },
   claude: { name: 'Claude', color: 'var(--claude)', letter: 'C' },
+  google: { name: 'Google Calendar', color: 'var(--google)', letter: 'G' },
 };
 
 const state = { meta: null, log: [], logFilter: null, flashId: null };
@@ -275,6 +276,7 @@ function gatesBetween(from, to) {
 }
 function gateValue(a, id) {
   if (id === 'closeDate') return a.deal.closeDate ? a.deal.closeDate.slice(0, 10) : '';
+  if (id === 'demoDate') return utcFieldToLocal(a.deal.fields?.demoDate);
   const v = a.deal.fields?.[id];
   if (v != null && v !== '') return v;
   if (id === 'properties') return a.properties;
@@ -312,6 +314,8 @@ function gateCheck(form, gates) {
 function collectGate(form, gates) {
   const G = state.meta.stageGates, out = {};
   for (const g of gates) for (const f of G[g].fields) out[f.id] = f.type === 'multi' ? $$(`input[name="${f.id}"]:checked`, form).map((x) => x.value) : form[f.id]?.value ?? '';
+  if ('demoDate' in out) out.demoDate = localToUtcField(out.demoDate);
+  if (form.sendInvite) out.sendInvite = form.sendInvite.checked;
   return out;
 }
 
@@ -341,7 +345,7 @@ function formDialog(html, submitLabel, onSubmit, { danger = false } = {}) {
 function moveDeal(a, to, after = () => route({ keepScroll: true })) {
   if (to === a.deal.stage) return;
   const gates = gatesBetween(a.deal.stage, to);
-  const post = (fields) => api(`/api/accounts/${a.id}/deal-stage`, { method: 'POST', body: { stage: to, fields } }).then(after);
+  const post = (fields) => api(`/api/accounts/${a.id}/deal-stage`, { method: 'POST', body: { stage: to, fields, tz: browserTz() } }).then(after);
   const G = state.meta.stageGates;
   if (to === 'closedwon') {
     return formDialog(`<h2>Close ${esc(a.name)} as won?</h2>
@@ -354,7 +358,8 @@ function moveDeal(a, to, after = () => route({ keepScroll: true })) {
   const last = G[gates.at(-1)];
   const form = formDialog(`<h2>${esc(to === 'closedlost' ? `${a.name}: ${last.title.toLowerCase()}` : `Move ${a.name} to ${stageName(to)}`)}</h2>
     <p class="muted small" style="margin-bottom:12px">${esc(last.why)} Prefilled from HubSpot; your answers are saved back to the deal.</p>
-    ${gateFieldsHtml(a, gates)}`,
+    ${gateFieldsHtml(a, gates)}
+    ${gates.includes('presentationscheduled') ? `<label class="check-pill invite-opt"><input type="checkbox" name="sendInvite" checked /> ${icon('i-video')}Send a calendar invite with a Google Meet link to ${esc(a.contact?.name ?? 'the prospect')} and the Solutions Engineer</label>` : ''}`,
     to === 'closedlost' ? 'Mark as lost' : `Move to ${stageName(to)}`,
     (f) => { const m = gateCheck(f, gates); if (m) throw new Error(m); return post(collectGate(f, gates)); },
     { danger: to === 'closedlost' });
@@ -365,7 +370,7 @@ function editDealDetails(a, gates, after = () => route({ keepScroll: true })) {
   formDialog(`<h2>${esc(a.name)}: deal details</h2>
     <p class="muted small" style="margin-bottom:12px">Needed for the stage it's in. Saved to HubSpot${gates.includes('presentationscheduled') ? ', and the Solutions Engineer gets the demo details in Slack' : ''}.</p>
     ${gateFieldsHtml(a, gates)}`, 'Save details',
-    (f) => { const m = gateCheck(f, gates); if (m) throw new Error(m); return api(`/api/accounts/${a.id}/deal-fields`, { method: 'POST', body: { fields: collectGate(f, gates) } }).then(after); });
+    (f) => { const m = gateCheck(f, gates); if (m) throw new Error(m); return api(`/api/accounts/${a.id}/deal-fields`, { method: 'POST', body: { fields: collectGate(f, gates), tz: browserTz() } }).then(after); });
 }
 
 function editCloseDate(a, after = () => route({ keepScroll: true })) {
@@ -700,6 +705,89 @@ function bindReplies(root) {
 }
 
 
+// ---------- meetings (Google Calendar + Meet) ----------
+const browserTz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } };
+const toLocalInput = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
+// Demo dates are stored in UTC ('YYYY-MM-DDTHH:mm'); the inputs show and take the viewer's local time.
+const utcFieldToLocal = (v) => (v ? toLocalInput(new Date(`${v}:00Z`)) : '');
+const localToUtcField = (v) => (v ? new Date(v).toISOString().slice(0, 16) : '');
+const fmtMeeting = (iso) => new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+// After booking: the link, ready to join or share.
+function meetingReady(link, heading, text) {
+  const dlg = $('#modal');
+  dlg.innerHTML = `<form method="dialog"><h2>${esc(heading)}</h2><p class="small" style="margin-bottom:12px">${esc(text)}</p>
+    <div class="meet-link">${icon('i-video')}<span class="mono small grow ellipsis">${esc(link.replace('https://', ''))}</span><button type="button" class="btn sm" id="copy-link">Copy</button></div>
+    <div class="dialog-actions"><a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">Join now</a><button class="btn" value="cancel">Done</button></div></form>`;
+  $('#copy-link', dlg).addEventListener('click', (e) => { navigator.clipboard?.writeText(link).then(() => { e.target.textContent = 'Copied'; }, () => {}); });
+  dlg.showModal();
+}
+
+// "Meet": a call right now, or a scheduled invite. Google Calendar emails it with a Meet link.
+function openMeetDialog(a, after = () => route({ keepScroll: true })) {
+  const me = user();
+  const team = [...new Set([a.owner, a.csm].filter((n) => n && n !== me.name))];
+  const title = me.team === 'support' ? `Quick call: ${a.name}` : me.team === 'cs' ? `Check-in: ${a.name}` : `${a.name} × Reeco`;
+  const tomorrow = new Date(Date.now() + 86400000); tomorrow.setHours(10, 0, 0, 0);
+  let result = null;
+  const form = formDialog(`
+    <h2>Meet with ${esc(a.name)}</h2>
+    <div class="seg seg-inline meet-when" role="group" aria-label="When">
+      <button type="button" class="sel" data-when="now" aria-pressed="true">Now</button>
+      <button type="button" data-when="later" aria-pressed="false">Schedule</button>
+    </div>
+    <div class="field when-later" hidden><label for="mt-start">Date and time</label><input class="input" id="mt-start" name="start" type="datetime-local" value="${toLocalInput(tomorrow)}" /></div>
+    <div class="field"><label for="mt-len">Length</label><select class="input" id="mt-len" name="minutes">${[15, 30, 45, 60].map((m) => `<option value="${m}" ${m === (me.team === 'support' ? 15 : 30) ? 'selected' : ''}>${m} minutes</option>`).join('')}</select></div>
+    <div class="field"><span class="flabel">Invite</span><div class="checks">
+      <label class="check-pill"><input type="checkbox" name="contact" checked /> ${esc(a.contact.name)} <span class="muted xs">${esc(a.contact.role)}</span></label>
+      ${team.map((n) => `<label class="check-pill"><input type="checkbox" name="team" value="${esc(n)}" /> ${esc(n)}</label>`).join('')}
+    </div></div>
+    <div class="field"><label for="mt-title">Title</label><input class="input" id="mt-title" name="title" value="${esc(title)}" required /></div>
+    <div class="field"><label for="mt-agenda">Agenda <span class="muted xs">(optional)</span></label><textarea class="input" id="mt-agenda" name="agenda" rows="2"></textarea></div>
+    <p class="muted small">Google Calendar emails the invite with a Meet link, and the meeting is logged in HubSpot.</p>`,
+    'Start the call', async (f) => {
+      const later = !$('.when-later', f).hidden;
+      if (later && !f.start.value) throw new Error('Pick a date and time.');
+      result = await api(`/api/accounts/${a.id}/meetings`, { method: 'POST', body: {
+        title: f.title.value, start: later ? new Date(f.start.value).toISOString() : null, minutes: Number(f.minutes.value),
+        withContact: f.contact.checked, team: $$('input[name="team"]:checked', f).map((x) => x.value), agenda: f.agenda.value, tz: browserTz(),
+      } });
+      result.later = later;
+      await after();
+    });
+  const go = $('button[value="ok"]', form);
+  $$('[data-when]', form).forEach((b) => b.addEventListener('click', () => {
+    const later = b.dataset.when === 'later';
+    $$('[data-when]', form).forEach((x) => { x.classList.toggle('sel', x === b); x.setAttribute('aria-pressed', x === b); });
+    $('.when-later', form).hidden = !later;
+    go.textContent = later ? 'Send invite' : 'Start the call';
+  }));
+  // formDialog closes itself after a successful submit; then show the link
+  $('#modal').addEventListener('close', () => {
+    if (!result) return;
+    const m = result.meeting;
+    setTimeout(() => meetingReady(m.link, result.later ? 'Invite sent' : 'Your call is ready',
+      result.later ? `${m.title}, ${fmtMeeting(m.start)}. Everyone got the invite by email.` : `${m.attendees.filter((n) => n !== user().name).join(', ')} got the invite by email. Join now and they can hop in.`), 0);
+  }, { once: true });
+}
+
+// The account's meetings: upcoming first, then the last two.
+function meetingsCard(a) {
+  const nowIso = new Date().toISOString();
+  const upcoming = (a.meetings ?? []).filter((m) => m.end > nowIso);
+  const past = (a.meetings ?? []).filter((m) => m.end <= nowIso).slice(-2).reverse();
+  const row = (m, isPast) => `<div class="list-item meeting ${isPast ? 'past' : ''}">
+      ${icon('i-video')}
+      <div class="grow"><div style="font-weight:500">${esc(m.title)}</div><div class="muted xs">${m.instant && !isPast ? 'Started ' + rel(m.start) : fmtMeeting(m.start)} · ${esc(m.attendees.join(', '))}</div></div>
+      ${isPast ? '' : `<a class="btn sm" href="${esc(m.link)}" target="_blank" rel="noopener">Join</a>`}
+    </div>`;
+  return `<section class="card">
+    <div class="card-head"><h2>Meetings</h2>${src('google', 'Google Calendar')}</div>
+    ${upcoming.map((m) => row(m, false)).join('') || '<div class="empty small">Nothing booked.</div>'}
+    ${past.length ? `<div class="sa-row-head" style="padding:10px 18px 0">Past</div>${past.map((m) => row(m, true)).join('')}` : ''}
+  </section>`;
+}
+
 // ---------- account tabs ----------
 const ACCOUNT_TABS = [
   { id: 'overview', label: 'Overview' },
@@ -873,6 +961,7 @@ async function renderAccount(id, query = new URLSearchParams()) {
         </div>
       </div>
       <div class="row">
+        ${can('meetings.create') ? `<button class="btn" data-meet>${icon('i-video')}Meet</button>` : ''}
         <button class="btn" id="add-note">${icon('i-plus')}Note</button>
         ${can('tickets.create') ? `<button class="btn" id="new-ticket">${icon('i-plus')}Jira ticket</button>` : ''}
       </div>
@@ -930,6 +1019,7 @@ async function renderAccount(id, query = new URLSearchParams()) {
       </div>
 
       <div class="stack">
+        ${meetingsCard(a)}
         <section class="card card-pad">
           <h2 style="margin-bottom:12px">Primary contact</h2>
           <dl class="kv">
@@ -970,6 +1060,7 @@ async function renderAccount(id, query = new URLSearchParams()) {
     $$('.tab-panel').forEach((p) => (p.hidden = p.id !== `panel-${b.dataset.acctTab}`));
   }));
   $$('.acct-sa [data-cta]').forEach((b) => b.addEventListener('click', () => runDealCta(pl, pl.signals.find((x) => x.type === b.dataset.sig), b)));
+  $$('[data-meet]').forEach((b) => b.addEventListener('click', () => openMeetDialog(a)));
   bindCsCards(view, { [a.id]: a });
   bindCsActions(view);
 
@@ -1255,6 +1346,7 @@ async function renderConversation(id) {
         ${me.team === 'support' && sel.assignee !== me.name ? '<button class="btn sm" id="take">Assign to me</button>' : ''}
         ${isSnoozed(sel) ? '<button class="btn sm" id="unsnooze">Unsnooze</button>'
           : `<select class="input sm" id="snooze" aria-label="Snooze"><option value="">Snooze…</option>${snoozeOptions().map(([l, d]) => `<option value="${d.toISOString()}">${l}</option>`).join('')}</select>`}
+        <button class="btn sm" id="video-call">${icon('i-video')}Video call</button>
         <span class="grow"></span>
         <div class="decide">
           ${sel.escalatedTo ? `<span class="st info"><svg class="ico"><use href="#i-alert"/></svg>With engineering · ${esc(sel.escalatedTo)}</span>` : '<button class="btn sm btn-escalate" id="escalate"><svg class="ico"><use href="#i-alert"/></svg>Escalate to engineering</button>'}
@@ -1293,6 +1385,17 @@ async function renderConversation(id) {
   $('#escalate')?.addEventListener('click', async (e) => { const btn = e.currentTarget; if (await confirmEscalate()) act(btn, 'escalate'); });
   $('#close')?.addEventListener('click', (e) => { const btn = e.currentTarget; pickCloseReason(sel.suggestedCloseReason, (reason) => act(btn, 'close', { reason }, true)); });
   $('#ai-run')?.addEventListener('click', (e) => act(e.currentTarget, 'ai'));
+  // Quick video call: a Meet link goes to the customer as a reply
+  $('#video-call')?.addEventListener('click', () => {
+    const who = sel.messages.find((m) => m.from === 'customer')?.author ?? 'the customer';
+    let link = null;
+    formDialog(`<h2>Video call with ${esc(who.split(' ')[0])}</h2>
+      <p class="muted small" style="margin-bottom:10px">Creates a Google Meet link and sends it to ${esc(who)} as your reply.</p>
+      <div class="field"><label for="vc-text">Message</label><textarea class="input" id="vc-text" name="text" rows="3">It might be quicker to talk this through. Can you join me on a short video call?</textarea></div>
+      <p class="muted xs">The link is added under your message.</p>`,
+      'Send the link', async (f) => { link = (await api(`/api/conversations/${sel.id}/call`, { method: 'POST', body: { text: f.text.value } })).link; await route({ keepScroll: true }); });
+    $('#modal').addEventListener('close', () => { if (link) setTimeout(() => meetingReady(link, 'Link sent', `${who} got the link in the conversation. Join now and wait for them to hop in.`), 0); }, { once: true });
+  });
   $('#ai-use')?.addEventListener('click', () => {
     const ta = $('form.reply textarea');
     ta.value = sel.ai.suggested_reply;

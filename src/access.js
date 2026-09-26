@@ -4,22 +4,22 @@
 export const ROLES = {
   ae: {
     label: 'Account Executive', home: '#/home', areas: ['sales'],
-    caps: ['pipeline.view', 'deal.edit', 'approvals.view', 'accounts.view', 'accounts.note'],
+    caps: ['pipeline.view', 'deal.edit', 'approvals.view', 'accounts.view', 'accounts.note', 'meetings.create'],
     accountTabs: ['overview', 'health'],
   },
   manager: {
     label: 'Sales Manager', home: '#/home', areas: ['sales'],
-    caps: ['pipeline.view', 'pipeline.team', 'deal.edit', 'approvals.view', 'approvals.team', 'approvals.decide', 'accounts.view', 'accounts.note'],
+    caps: ['pipeline.view', 'pipeline.team', 'deal.edit', 'approvals.view', 'approvals.team', 'approvals.decide', 'accounts.view', 'accounts.note', 'meetings.create'],
     accountTabs: ['overview', 'health'],
   },
   support: {
     label: 'Support', home: '#/home', areas: ['support'],
-    caps: ['inbox.work', 'fr.view', 'accounts.view', 'accounts.note', 'tickets.create'],
+    caps: ['inbox.work', 'fr.view', 'accounts.view', 'accounts.note', 'tickets.create', 'meetings.create'],
     accountTabs: ['support', 'overview', 'requests'],
   },
   cs: {
     label: 'Customer Success', home: '#/home', areas: ['cs'],
-    caps: ['portfolio.view', 'portfolio.edit', 'onboarding.edit', 'anomalies.edit', 'fr.view', 'fr.edit', 'accounts.view', 'accounts.note', 'tickets.create'],
+    caps: ['portfolio.view', 'portfolio.edit', 'onboarding.edit', 'anomalies.edit', 'fr.view', 'fr.edit', 'accounts.view', 'accounts.note', 'tickets.create', 'meetings.create'],
     accountTabs: ['health', 'support', 'requests', 'overview'],
   },
   admin: {
@@ -35,7 +35,7 @@ const AREAS = {
   pipeline: 'sales', deal: 'sales', approvals: 'sales',
   inbox: 'support',
   portfolio: 'cs', onboarding: 'cs', anomalies: 'cs', fr: 'cs',
-  accounts: 'account', tickets: 'account',
+  accounts: 'account', tickets: 'account', meetings: 'account',
   log: 'system', connections: 'system', system: 'system',
 };
 const OWNERS = {

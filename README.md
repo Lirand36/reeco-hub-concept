@@ -12,6 +12,7 @@ Reeco Hub is one internal workspace for Reeco's Sales, Support and Customer Succ
 | **Slack** | Posts deal wins, escalations and SLA breaches, runs discount approvals with buttons, creates a channel per onboarding customer |
 | **Snowflake** | Reads product usage and platform status (ERP sync, errors, app version); writes every hub action to `GTM.HUB_EVENTS` |
 | **Claude** | AI assist in the inbox: summary, customer mood, likely category, next step and a draft reply (structured output) |
+| **Google Calendar & Meet** | Books meetings with a Meet link and emails the invites (on the booker's own calendar); instant Meet rooms for quick calls |
 
 ## Run locally
 
@@ -58,7 +59,11 @@ The same steps, with links, are in the app under the user menu (bottom-left) →
    - **Support on her accounts:** each account's Support tab lists open conversations (reply due, classification, owner), engineering tickets and past conversations. Escalations and flagged messages DM the CSM in Slack.
    - **Feature requests:** closing a support conversation as "Feature request" logs it in Jira (`PROD`) or adds the account to a matching existing request. Status changes arrive from Jira (`/webhooks/jira`, or the demo arrow next to a status) and DM the CSMs of every account that asked. When it ships, **Tell the customer** sends an Intercom message and a HubSpot note.
 5. **Onboarding.** A table of every hotel group from kickoff to go-live (In progress / Live / All), with progress, the next manual step as a suggested action, and the timeline. **Refresh usage** ticks off usage-based steps (vendors connected, first PO, first AI invoice); the CSM marks manual steps done. When all six are done, go-live is announced.
-6. **Under the hood.** The **Activity log** tells the story of every action in plain words (for example "Ticket SUP-2311 escalated to engineering, and Moshe L. (VP Support) was notified"). Open a row to see each step, and "Technical details" for the exact request and response.
+6. **Meetings (Google Calendar + Meet).** Every account page has **Meet**: *Now* (a call starting now; the invite with the Meet link is emailed at once) or *Schedule* (date, length, who to invite, agenda). Meetings are logged in HubSpot and listed on the account under **Meetings** with a **Join** button, in your own time zone.
+   - **Support:** **Video call** in a conversation sends the customer a Meet link as your reply.
+   - **Sales:** moving a deal to **Demo** sends the calendar invite with a Meet link to the prospect and the Solutions Engineer (a checkbox in the Demo pop-up; on by default).
+   - **CSM:** *Call now* for a quick check-in with the customer.
+7. **Under the hood.** The **Activity log** tells the story of every action in plain words (for example "Ticket SUP-2311 escalated to engineering, and Moshe L. (VP Support) was notified"). Open a row to see each step, and "Technical details" for the exact request and response.
 
 ## Roles and access
 
