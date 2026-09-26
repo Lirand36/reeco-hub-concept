@@ -1110,9 +1110,9 @@ async function renderAccount(id, query = new URLSearchParams()) {
 
 // ---------- inbox ----------
 const INBOUND_SAMPLES = [
-  { label: 'Enterprise: angry about invoices', email: 'greg.walsh@meridiansuites.com', text: 'Invoices from US Foods are still broken after your fix. Unacceptable. We need someone on this today.' },
-  { label: 'Onboarding: ERP question', email: 'priya@sableandpine.com', text: 'Our Sage Intacct sync is failing for resort #3 again. Can someone look?' },
-  { label: 'Live: feature question', email: 'ana@coastalkeys.com', text: 'Can we set par levels per outlet for the pool bar?' },
+  { label: 'Enterprise: angry about invoices', email: 'greg.walsh@meridiansuites.com.invalid', text: 'Invoices from US Foods are still broken after your fix. Unacceptable. We need someone on this today.' },
+  { label: 'Onboarding: ERP question', email: 'priya@sableandpine.com.invalid', text: 'Our Sage Intacct sync is failing for resort #3 again. Can someone look?' },
+  { label: 'Live: feature question', email: 'ana@coastalkeys.com.invalid', text: 'Can we set par levels per outlet for the pool bar?' },
 ];
 
 const isSnoozed = (c) => c.snoozedUntil && new Date(c.snoozedUntil) > new Date();

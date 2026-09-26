@@ -46,8 +46,8 @@ export const CLOSE_REASONS = [
 export const PEOPLE = {
   vpSupport: { name: 'Moshe L.', title: 'VP Support', slackId: 'U04MOSHEL' },
   solutionsEngineers: [
-    { name: 'Yael M.', title: 'Solutions Engineer', slackId: 'U04YAELM', email: 'yael.m@reeco.com' },
-    { name: 'Omer T.', title: 'Solutions Engineer', slackId: 'U04OMERT', email: 'omer.t@reeco.com' },
+    { name: 'Yael M.', title: 'Solutions Engineer', slackId: 'U04YAELM', email: 'yael.m@reeco.com.invalid' },
+    { name: 'Omer T.', title: 'Solutions Engineer', slackId: 'U04OMERT', email: 'omer.t@reeco.com.invalid' },
   ],
 };
 
@@ -106,14 +106,14 @@ export const STAGE_DAYS = { appointmentscheduled: 14, qualifiedtobuy: 14, presen
 export const SILENT_DAYS = { flag: 7, high: 14 };
 
 export const USERS = [
-  { id: 'maya', email: 'maya.k@reeco.com', name: 'Maya K.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04MAYAK' },
-  { id: 'noa', email: 'noa.r@reeco.com', name: 'Noa R.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04NOAR' },
-  { id: 'daniel', email: 'daniel.p@reeco.com', name: 'Daniel P.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04DANIELP' },
-  { id: 'eitan', email: 'eitan.b@reeco.com', name: 'Eitan B.', role: 'Sales Manager', team: 'sales', access: 'manager', approver: true, slackId: 'U04EITANB' },
-  { id: 'ron', email: 'ron.a@reeco.com', name: 'Ron A.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823101' },
-  { id: 'tal', email: 'tal.g@reeco.com', name: 'Tal G.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823114' },
-  { id: 'dana', email: 'dana.s@reeco.com', name: 'Dana S.', role: 'Customer Success', team: 'cs', access: 'cs', slackId: 'U04DANAS' },
-  { id: 'alex', email: 'alex.m@reeco.com', name: 'Alex M.', role: 'Admin', team: 'admin', access: 'admin' },
+  { id: 'maya', email: 'maya.k@reeco.com.invalid', name: 'Maya K.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04MAYAK' },
+  { id: 'noa', email: 'noa.r@reeco.com.invalid', name: 'Noa R.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04NOAR' },
+  { id: 'daniel', email: 'daniel.p@reeco.com.invalid', name: 'Daniel P.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04DANIELP' },
+  { id: 'eitan', email: 'eitan.b@reeco.com.invalid', name: 'Eitan B.', role: 'Sales Manager', team: 'sales', access: 'manager', approver: true, slackId: 'U04EITANB' },
+  { id: 'ron', email: 'ron.a@reeco.com.invalid', name: 'Ron A.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823101' },
+  { id: 'tal', email: 'tal.g@reeco.com.invalid', name: 'Tal G.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823114' },
+  { id: 'dana', email: 'dana.s@reeco.com.invalid', name: 'Dana S.', role: 'Customer Success', team: 'cs', access: 'cs', slackId: 'U04DANAS' },
+  { id: 'alex', email: 'alex.m@reeco.com.invalid', name: 'Alex M.', role: 'Admin', team: 'admin', access: 'admin' },
 ];
 
 // 12 weeks of weekly product usage (oldest → newest), as Snowflake's PRODUCT.WEEKLY_USAGE would return it.
@@ -140,7 +140,7 @@ function seedAccounts() {
       id: 'harborline', name: 'Harborline Hotel Group', domain: 'harborlinehotels.com', status: 'Prospect',
       segment: 'Enterprise', properties: 14, region: 'US East', owner: 'Maya K.', csm: 'Dana S.', health: null,
       hubspotCompanyId: '9120034411',
-      contact: { name: 'Laura Chen', role: 'VP Procurement', email: 'laura.chen@harborlinehotels.com' },
+      contact: { name: 'Laura Chen', role: 'VP Procurement', email: 'laura.chen@harborlinehotels.com.invalid' },
       deal: { id: '18840021', name: 'Harborline: 14-property rollout', amount: 186000, stage: 'contractsent', discountPct: 0 },
       usage: null, onboarding: null,
       tickets: [], conversations: [],
@@ -150,7 +150,7 @@ function seedAccounts() {
       id: 'olive-court', name: 'The Olive Court Hotel', domain: 'olivecourthotel.com', status: 'Prospect',
       segment: 'Independent', properties: 1, region: 'US West', owner: 'Maya K.', csm: 'Dana S.', health: null,
       hubspotCompanyId: '9120034488',
-      contact: { name: 'Marco Rossi', role: 'General Manager', email: 'marco@olivecourthotel.com' },
+      contact: { name: 'Marco Rossi', role: 'General Manager', email: 'marco@olivecourthotel.com.invalid' },
       deal: { id: '18840107', name: 'Olive Court: single property', amount: 9600, stage: 'presentationscheduled', discountPct: 0 },
       usage: null, onboarding: null,
       tickets: [], conversations: [],
@@ -160,7 +160,7 @@ function seedAccounts() {
       id: 'northgate', name: 'Northgate Inns', domain: 'northgateinns.com', status: 'Prospect',
       segment: 'Mid-market', properties: 11, region: 'Midwest', owner: 'Maya K.', csm: 'Dana S.', health: null,
       hubspotCompanyId: '9120034502',
-      contact: { name: 'Tom Becker', role: 'Director of F&B', email: 'tom.becker@northgateinns.com' },
+      contact: { name: 'Tom Becker', role: 'Director of F&B', email: 'tom.becker@northgateinns.com.invalid' },
       deal: { id: '18840230', name: 'Northgate: P2P + inventory', amount: 72000, stage: 'qualifiedtobuy', discountPct: 0 },
       usage: null, onboarding: null,
       tickets: [], conversations: [], notes: [],
@@ -169,7 +169,7 @@ function seedAccounts() {
       id: 'sable-pine', name: 'Sable & Pine Resorts', domain: 'sableandpine.com', status: 'Onboarding',
       segment: 'Mid-market', properties: 6, region: 'Mountain', owner: 'Maya K.', csm: 'Dana S.', health: 74,
       hubspotCompanyId: '9120034577',
-      contact: { name: 'Priya Nair', role: 'Corporate Controller', email: 'priya@sableandpine.com' },
+      contact: { name: 'Priya Nair', role: 'Corporate Controller', email: 'priya@sableandpine.com.invalid' },
       deal: { id: '18840311', name: 'Sable & Pine: 6 resorts', amount: 54000, stage: 'closedwon', discountPct: 10 },
       usage: { propertiesLive: 2, activeUsers: 23, pos30d: 41, invoicesAi30d: 0, spend30d: 184000, vendorsConnected: 7, lastActive: ago(0.5) },
       renewalDate: inDays(353),
@@ -196,7 +196,7 @@ function seedAccounts() {
       id: 'meridian', name: 'Meridian Suites', domain: 'meridiansuites.com', status: 'Live',
       segment: 'Enterprise', properties: 22, region: 'US South', owner: 'Maya K.', csm: 'Dana S.', health: 41,
       hubspotCompanyId: '9120034610',
-      contact: { name: 'Greg Walsh', role: 'CFO', email: 'greg.walsh@meridiansuites.com' },
+      contact: { name: 'Greg Walsh', role: 'CFO', email: 'greg.walsh@meridiansuites.com.invalid' },
       deal: { id: '18840402', name: 'Meridian: renewal + inventory module', amount: 240000, stage: 'decisionmakerboughtin', discountPct: 0 },
       usage: { propertiesLive: 22, activeUsers: 311, pos30d: 2140, invoicesAi30d: 5870, spend30d: 3_420_000, vendorsConnected: 188, lastActive: ago(0.1) },
       renewalDate: inDays(60),
@@ -224,7 +224,7 @@ function seedAccounts() {
       id: 'coastal-keys', name: 'Coastal Keys Hospitality', domain: 'coastalkeys.com', status: 'Live',
       segment: 'Mid-market', properties: 9, region: 'Florida', owner: 'Maya K.', csm: 'Dana S.', health: 83,
       hubspotCompanyId: '9120034688',
-      contact: { name: 'Ana Lopez', role: 'Purchasing Manager', email: 'ana@coastalkeys.com' },
+      contact: { name: 'Ana Lopez', role: 'Purchasing Manager', email: 'ana@coastalkeys.com.invalid' },
       deal: { id: '18840455', name: 'Coastal Keys: add recipe costing', amount: 18000, stage: 'appointmentscheduled', discountPct: 0 },
       usage: { propertiesLive: 9, activeUsers: 64, pos30d: 612, invoicesAi30d: 1340, spend30d: 890_000, vendorsConnected: 57, lastActive: ago(0.3) },
       renewalDate: inDays(205),
@@ -244,7 +244,7 @@ function seedAccounts() {
         closed('215466410', 'Request: par levels per outlet', 'Ana Lopez', 'Tal G.', 'feature_request', 24 * 15,
           'Can we set par levels per outlet?', 'Not yet. I logged it with product and will update you.'),
         closed('215466111', 'Change billing contact', 'Ana Lopez', 'Ron A.', 'account_billing', 24 * 26,
-          'Please send invoices to ap@coastalkeys.com from now on.', 'Done, billing contact updated.'),
+          'Please send invoices to ap@coastalkeys.com.invalid from now on.', 'Done, billing contact updated.'),
       ],
       notes: [{ text: 'Happy account, strong upsell fit for recipe costing.', author: 'Maya K.', at: ago(100) }],
     },
@@ -252,7 +252,7 @@ function seedAccounts() {
       id: 'alder-main', name: 'Alder & Main Hotels', domain: 'alderandmain.com', status: 'Live',
       segment: 'Mid-market', properties: 7, region: 'Pacific NW', owner: 'Maya K.', csm: 'Dana S.', health: null,
       hubspotCompanyId: '9120034721',
-      contact: { name: 'Jordan Pike', role: 'Director of Operations', email: 'jordan@alderandmain.com' },
+      contact: { name: 'Jordan Pike', role: 'Director of Operations', email: 'jordan@alderandmain.com.invalid' },
       deal: { id: '18840510', name: 'Alder & Main: annual renewal', amount: 46000, stage: 'closedwon', discountPct: 0 },
       renewalDate: inDays(45),
       usageSeries: {
@@ -273,7 +273,7 @@ function seedAccounts() {
       id: 'bluewater', name: 'Bluewater Resorts', domain: 'bluewaterresorts.com', status: 'Live',
       segment: 'Enterprise', properties: 18, region: 'Caribbean', owner: 'Maya K.', csm: 'Dana S.', health: null,
       hubspotCompanyId: '9120034755',
-      contact: { name: 'Elena Duarte', role: 'VP Finance', email: 'elena@bluewaterresorts.com' },
+      contact: { name: 'Elena Duarte', role: 'VP Finance', email: 'elena@bluewaterresorts.com.invalid' },
       deal: { id: '18840533', name: 'Bluewater: 3-year renewal', amount: 212000, stage: 'closedwon', discountPct: 5 },
       renewalDate: inDays(290),
       usageSeries: {
@@ -327,7 +327,7 @@ const DEAL_EXTRAS = {
     closeDate: inDays(9), stageEnteredAt: ago(24 * 6), modules: ['P2P ordering', 'AP automation (AI invoices)', 'ERP integration'],
     fields: { pain: 'AP keys in 9,000 invoices a month by hand; no price visibility across 14 properties', properties: 14, erp: 'NetSuite', decisionMaker: 'David Harlow, CFO',
       demoDate: ago(24 * 30).slice(0, 16), se: 'Yael M.', useCases: ['P2P ordering', 'AP automation (AI invoices)'], attendees: 'Laura Chen, AP lead, 3 GMs',
-      champion: 'Laura Chen, VP Procurement', businessValue: 420000, signer: 'David Harlow, CFO', legalContact: 'legal@harborlinehotels.com' },
+      champion: 'Laura Chen, VP Procurement', businessValue: 420000, signer: 'David Harlow, CFO', legalContact: 'legal@harborlinehotels.com.invalid' },
     activities: [act('email', 'in', 2, 'Re: Order form: legal redlines'), act('email', 'out', 3, 'Order form: Harborline'), act('meeting', 'in', 9, 'Commercials review')],
   },
   'olive-court': {
@@ -358,7 +358,7 @@ function seedProspects() {
   return [
     prospect({
       id: 'lakeview', name: 'Lakeview Lodges', domain: 'lakeviewlodges.com', segment: 'Mid-market', properties: 8, region: 'Great Lakes', owner: 'Maya K.', hubspotCompanyId: '9120034720',
-      contact: { name: 'Hannah Moore', role: 'Controller', email: 'hannah@lakeviewlodges.com' },
+      contact: { name: 'Hannah Moore', role: 'Controller', email: 'hannah@lakeviewlodges.com.invalid' },
       deal: { id: '18840590', name: 'Lakeview: P2P + AP automation', amount: 48000, stage: 'qualifiedtobuy', discountPct: 0,
         closeDate: inDays(-4), stageEnteredAt: ago(24 * 21), modules: ['P2P ordering', 'AP automation (AI invoices)'],
         fields: { pain: 'Month-end close takes 12 days because of paper invoices', properties: 8, erp: 'QuickBooks', decisionMaker: 'Hannah Moore, Controller' },
@@ -366,21 +366,21 @@ function seedProspects() {
     }),
     prospect({
       id: 'copper-kettle', name: 'The Copper Kettle Inn', domain: 'copperkettleinn.com', segment: 'Independent', properties: 1, region: 'New England', owner: 'Maya K.', hubspotCompanyId: '9120034733',
-      contact: { name: 'Sam Price', role: 'Owner', email: 'sam@copperkettleinn.com' },
+      contact: { name: 'Sam Price', role: 'Owner', email: 'sam@copperkettleinn.com.invalid' },
       deal: { id: '18840602', name: 'Copper Kettle: single property', amount: 7200, stage: 'appointmentscheduled', discountPct: 0,
         closeDate: inDays(40), stageEnteredAt: ago(24 * 2), modules: ['P2P ordering'], fields: {},
         activities: [act('email', 'in', 1, 'Demo request from reeco.com')] },
     }),
     prospect({
       id: 'pacific-crest', name: 'Pacific Crest Hotels', domain: 'pacificcresthotels.com', segment: 'Enterprise', properties: 22, region: 'US West', owner: 'Noa R.', hubspotCompanyId: '9120034745',
-      contact: { name: 'Julia Park', role: 'SVP Operations', email: 'julia.park@pacificcresthotels.com' },
+      contact: { name: 'Julia Park', role: 'SVP Operations', email: 'julia.park@pacificcresthotels.com.invalid' },
       deal: { id: '18840611', name: 'Pacific Crest: 22-property rollout', amount: 310000, stage: 'appointmentscheduled', discountPct: 0,
         closeDate: inDays(90), stageEnteredAt: ago(24 * 5), modules: ['P2P ordering', 'AP automation (AI invoices)', 'ERP integration'], fields: { properties: 22, erp: 'NetSuite' },
         activities: [act('meeting', 'in', 5, 'Intro with SVP Operations')] },
     }),
     prospect({
       id: 'riverstone', name: 'Riverstone Hospitality Group', domain: 'riverstonehg.com', segment: 'Mid-market', properties: 9, region: 'Southeast', owner: 'Daniel P.', hubspotCompanyId: '9120034759',
-      contact: { name: 'Chris Allen', role: 'CFO', email: 'chris.allen@riverstonehg.com' },
+      contact: { name: 'Chris Allen', role: 'CFO', email: 'chris.allen@riverstonehg.com.invalid' },
       deal: { id: '18840624', name: 'Riverstone: AP automation', amount: 81000, stage: 'presentationscheduled', discountPct: 0,
         closeDate: inDays(35), stageEnteredAt: ago(24 * 3), modules: ['AP automation (AI invoices)', 'ERP integration'],
         fields: { pain: 'Invoice backlog of 3 weeks at month end', properties: 9, erp: 'Sage Intacct', decisionMaker: 'Chris Allen, CFO',
@@ -389,12 +389,12 @@ function seedProspects() {
     }),
     prospect({
       id: 'summit-harbor', name: 'Summit & Harbor Resorts', domain: 'summitharbor.com', segment: 'Enterprise', properties: 17, region: 'Northeast', owner: 'Noa R.', hubspotCompanyId: '9120034768',
-      contact: { name: 'Mark Ellis', role: 'VP Finance', email: 'mark.ellis@summitharbor.com' },
+      contact: { name: 'Mark Ellis', role: 'VP Finance', email: 'mark.ellis@summitharbor.com.invalid' },
       deal: { id: '18840637', name: 'Summit & Harbor: 17 resorts', amount: 204000, stage: 'contractsent', discountPct: 0,
         closeDate: inDays(-3), stageEnteredAt: ago(24 * 12), modules: ['P2P ordering', 'AP automation (AI invoices)'],
         fields: { pain: 'No spend visibility across 17 resorts', properties: 17, erp: 'NetSuite', decisionMaker: 'Mark Ellis, VP Finance',
           demoDate: ago(24 * 40).slice(0, 16), se: 'Omer T.', useCases: ['P2P ordering', 'AP automation (AI invoices)'], attendees: 'Finance and F&B leads',
-          champion: 'Mark Ellis, VP Finance', businessValue: 520000, signer: 'Mark Ellis, VP Finance', legalContact: 'contracts@summitharbor.com' },
+          champion: 'Mark Ellis, VP Finance', businessValue: 520000, signer: 'Mark Ellis, VP Finance', legalContact: 'contracts@summitharbor.com.invalid' },
         activities: [act('email', 'out', 5, 'Following up on the order form'), act('email', 'in', 8, 'Re: Order form'), act('email', 'out', 12, 'Order form: Summit & Harbor')] },
     }),
   ];
