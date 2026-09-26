@@ -789,7 +789,7 @@ export async function scheduleMeeting(accountId, { title, start, minutes = 30, t
   need(attendees.length > 1, 400, 'Invite at least one other person');
 
   const ev = await google.createEvent({
-    organizer: organizer?.email ?? 'hub@reeco.com', summary: title.trim(),
+    organizer: organizer?.email ?? 'hub@reeco.com.invalid', summary: title.trim(),
     description: `${agenda.trim() ? `${agenda.trim()}\n\n` : ''}Booked from Reeco Hub · ${a.name}`,
     start: startAt.toISOString(), end: endAt.toISOString(), attendees,
   });
@@ -812,7 +812,7 @@ export async function scheduleMeeting(accountId, { title, start, minutes = 30, t
 export async function quickCall(conversationId, text, actor) {
   const { account: a, conversation: c } = getConversation(conversationId);
   need(c.state === 'open', 400, 'This conversation is closed');
-  const space = await google.createSpace(userByName(actor)?.email ?? 'hub@reeco.com');
+  const space = await google.createSpace(userByName(actor)?.email ?? 'hub@reeco.com.invalid');
   failIfRejected(space);
   const link = space.response.meetingUri;
   const body = `${(text?.trim() || "It might be quicker to talk this through. Can you join me on a short video call?")}\n\n${link}`;
