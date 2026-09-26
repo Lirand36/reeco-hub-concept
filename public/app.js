@@ -608,8 +608,8 @@ const ACCOUNT_COLS = [
   { id: 'properties', label: 'Properties', val: (a) => a.properties, sm: true, center: true },
   { id: 'arr', label: 'ARR', val: (a) => a.deal.amount, sm: true, num: true },
   { id: 'spend', label: 'Spend via Reeco (30d)', val: (a) => a.usage?.spend30d ?? -1, sm: true, num: true },
-  { id: 'health', label: 'Health', val: (a) => a.health ?? -1, num: true },
-  { id: 'open', label: 'Open', val: (a) => a.openConversations + a.openTickets, sm: true, num: true },
+  { id: 'health', label: 'Health', val: (a) => a.health ?? -1 },
+  { id: 'open', label: 'Open', val: (a) => a.openConversations + a.openTickets, sm: true },
 ];
 
 async function renderAccounts() {
@@ -637,8 +637,8 @@ async function renderAccounts() {
             <td class="hide-sm small num center-col">${a.usage ? `${a.usage.propertiesLive}/` : ''}${a.properties}</td>
             <td class="hide-sm num num-col">${money(a.deal.amount)}</td>
             <td class="hide-sm num num-col">${a.usage ? moneyCompact(a.usage.spend30d) : '<span class="muted">–</span>'}</td>
-            <td>${a.health != null ? riskChip(a.healthLevel, a.health) : '<span class="muted small">Prospect</span>'}</td>
-            <td class="hide-sm small num-col">${a.openConversations + a.openTickets ? `${a.openConversations} conv · ${a.openTickets} tickets` : '<span class="muted">–</span>'}</td>
+            <td>${a.health != null ? riskChip(a.healthLevel, a.health) : '<span class="muted">–</span>'}</td>
+            <td class="hide-sm small">${a.openConversations + a.openTickets ? [a.openConversations && `${a.openConversations} ${a.openConversations === 1 ? 'conversation' : 'conversations'}`, a.openTickets && `${a.openTickets} ${a.openTickets === 1 ? 'ticket' : 'tickets'}`].filter(Boolean).join(' · ') : '<span class="muted">–</span>'}</td>
           </tr>`).join('')}</tbody>
       </table>
       <div class="empty" id="no-match" hidden>No accounts match your filter.</div>
