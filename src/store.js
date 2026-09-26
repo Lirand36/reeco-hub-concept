@@ -46,8 +46,8 @@ export const CLOSE_REASONS = [
 export const PEOPLE = {
   vpSupport: { name: 'Moshe L.', title: 'VP Support', slackId: 'U04MOSHEL' },
   solutionsEngineers: [
-    { name: 'Yael M.', title: 'Solutions Engineer', slackId: 'U04YAELM' },
-    { name: 'Omer T.', title: 'Solutions Engineer', slackId: 'U04OMERT' },
+    { name: 'Yael M.', title: 'Solutions Engineer', slackId: 'U04YAELM', email: 'yael.m@reeco.com' },
+    { name: 'Omer T.', title: 'Solutions Engineer', slackId: 'U04OMERT', email: 'omer.t@reeco.com' },
   ],
 };
 
@@ -106,14 +106,14 @@ export const STAGE_DAYS = { appointmentscheduled: 14, qualifiedtobuy: 14, presen
 export const SILENT_DAYS = { flag: 7, high: 14 };
 
 export const USERS = [
-  { id: 'maya', name: 'Maya K.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04MAYAK' },
-  { id: 'noa', name: 'Noa R.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04NOAR' },
-  { id: 'daniel', name: 'Daniel P.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04DANIELP' },
-  { id: 'eitan', name: 'Eitan B.', role: 'Sales Manager', team: 'sales', access: 'manager', approver: true, slackId: 'U04EITANB' },
-  { id: 'ron', name: 'Ron A.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823101' },
-  { id: 'tal', name: 'Tal G.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823114' },
-  { id: 'dana', name: 'Dana S.', role: 'Customer Success', team: 'cs', access: 'cs', slackId: 'U04DANAS' },
-  { id: 'alex', name: 'Alex M.', role: 'Admin', team: 'admin', access: 'admin' },
+  { id: 'maya', email: 'maya.k@reeco.com', name: 'Maya K.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04MAYAK' },
+  { id: 'noa', email: 'noa.r@reeco.com', name: 'Noa R.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04NOAR' },
+  { id: 'daniel', email: 'daniel.p@reeco.com', name: 'Daniel P.', role: 'Account Executive', team: 'sales', access: 'ae', slackId: 'U04DANIELP' },
+  { id: 'eitan', email: 'eitan.b@reeco.com', name: 'Eitan B.', role: 'Sales Manager', team: 'sales', access: 'manager', approver: true, slackId: 'U04EITANB' },
+  { id: 'ron', email: 'ron.a@reeco.com', name: 'Ron A.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823101' },
+  { id: 'tal', email: 'tal.g@reeco.com', name: 'Tal G.', role: 'Support', team: 'support', access: 'support', intercomAdminId: '5823114' },
+  { id: 'dana', email: 'dana.s@reeco.com', name: 'Dana S.', role: 'Customer Success', team: 'cs', access: 'cs', slackId: 'U04DANAS' },
+  { id: 'alex', email: 'alex.m@reeco.com', name: 'Alex M.', role: 'Admin', team: 'admin', access: 'admin' },
 ];
 
 // 12 weeks of weekly product usage (oldest → newest), as Snowflake's PRODUCT.WEEKLY_USAGE would return it.
@@ -384,7 +384,7 @@ function seedProspects() {
       deal: { id: '18840624', name: 'Riverstone: AP automation', amount: 81000, stage: 'presentationscheduled', discountPct: 0,
         closeDate: inDays(35), stageEnteredAt: ago(24 * 3), modules: ['AP automation (AI invoices)', 'ERP integration'],
         fields: { pain: 'Invoice backlog of 3 weeks at month end', properties: 9, erp: 'Sage Intacct', decisionMaker: 'Chris Allen, CFO',
-          demoDate: inDays(2).slice(0, 16), se: 'Yael M.', useCases: ['AP automation (AI invoices)', 'ERP integration'], attendees: 'Chris Allen, AP manager' },
+          demoDate: `${inDays(2).slice(0, 10)}T15:00`, se: 'Yael M.', useCases: ['AP automation (AI invoices)', 'ERP integration'], attendees: 'Chris Allen, AP manager' },
         activities: [act('email', 'in', 2, 'Re: Demo on Thursday')] },
     }),
     prospect({
@@ -438,7 +438,12 @@ export function reset() {
     Object.assign(a.deal, structuredClone(DEAL_EXTRAS[a.id] ?? {}));
     a.deal.fields ??= {};
     a.deal.activities ??= [];
+    a.meetings = [];
   }
+  const rs = db.accounts.find((a) => a.id === 'riverstone');
+  const demoAt = new Date(rs.deal.fields.demoDate + ':00Z');
+  rs.meetings.push({ id: 'mtg_seed_1', title: 'Reeco demo: Riverstone Hospitality Group', start: demoAt.toISOString(), end: new Date(+demoAt + 45 * 60_000).toISOString(),
+    link: 'https://meet.google.com/qmx-hbrt-kpw', organizer: 'Daniel P.', attendees: ['Chris Allen', 'Yael M.', 'Daniel P.'], createdAt: new Date(Date.now() - 2 * 86400_000).toISOString() });
   db.wonDeals = seedWonDeals();
   for (const a of db.accounts) {
     for (const c of a.conversations) {

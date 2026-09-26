@@ -7,6 +7,7 @@ import * as intercom from './connectors/intercom.js';
 import * as slack from './connectors/slack.js';
 import * as snowflake from './connectors/snowflake.js';
 import * as claude from './connectors/claude.js';
+import * as google from './connectors/google.js';
 import { bus } from './bus.js';
 import { announce, withActivity } from './activity.js';
 import { CLASSIFICATIONS, classify, classificationLabel, fromCloseReason } from './classify.js';
@@ -29,7 +30,7 @@ function getAccount(id) {
   return a;
 }
 
-const SYSTEM_NAMES = { hubspot: 'HubSpot', jira: 'Jira', intercom: 'Intercom', slack: 'Slack', snowflake: 'Snowflake', claude: 'Claude' };
+const SYSTEM_NAMES = { hubspot: 'HubSpot', jira: 'Jira', intercom: 'Intercom', slack: 'Slack', snowflake: 'Snowflake', claude: 'Claude', google: 'Google Calendar' };
 const first = (name) => String(name).split(' ')[0];
 const stageLabel = (id) => DEAL_STAGES.find((x) => x.id === id)?.label ?? id;
 
@@ -72,22 +73,35 @@ function applyFields(a, fields) {
   }
 }
 const seOf = (name) => PEOPLE.solutionsEngineers.find((p) => p.name === name);
-const fmtDemo = (v) => (v ? new Date(v).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'date to be set');
+
+// The demo invite: prospect + SE + AE, with a Meet link, from the fields the Demo pop-up asked for.
+async function bookDemo(a, actor, tz) {
+  const f = a.deal.fields;
+  const at = f.demoDate ? new Date(`${f.demoDate}:00Z`) : null;
+  if (!at || +at < Date.now()) return null; // no date, or already in the past: nothing to invite to
+  const { meeting } = await scheduleMeeting(a.id, {
+    title: `Reeco demo: ${a.name}`, start: at.toISOString(), minutes: 45, tz,
+    team: [f.se, a.owner].filter(Boolean), withContact: true,
+    agenda: `What we'll show: ${(f.useCases ?? []).join(', ') || 'to be agreed'}\nAttendees: ${f.attendees || 'to be confirmed'}\nERP: ${f.erp || 'n/a'} · ${a.properties} properties`,
+  }, actor);
+  return meeting;
+}
+const fmtDemo = (v, tz) => (v ? fmtWhen(new Date(`${v}:00Z`).toISOString(), tz) : 'date to be set');
 
 // Automation: a demo is set, so the Solutions Engineer gets everything they need in Slack.
-async function loopInSe(a, actor) {
+async function loopInSe(a, actor, tz = 'UTC') {
   const f = a.deal.fields;
   const se = seOf(f.se);
   if (!se) return null;
-  await slack.dm(se.slackId, se.name, `Demo: ${a.name} on ${fmtDemo(f.demoDate)}`, [
-    slack.section(`:tv: *You're on the ${a.name} demo* with ${actor}\n*When:* ${fmtDemo(f.demoDate)}\n*Show:* ${(f.useCases ?? []).join(', ') || 'to be agreed'}\n*Attendees:* ${f.attendees || 'to be confirmed'}`),
+  await slack.dm(se.slackId, se.name, `Demo: ${a.name} on ${fmtDemo(f.demoDate, tz)}`, [
+    slack.section(`:tv: *You're on the ${a.name} demo* with ${actor}\n*When:* ${fmtDemo(f.demoDate, tz)}\n*Show:* ${(f.useCases ?? []).join(', ') || 'to be agreed'}\n*Attendees:* ${f.attendees || 'to be confirmed'}`),
     slack.section(`*Pain:* ${f.pain || 'n/a'}\n*ERP:* ${f.erp || 'n/a'} · ${a.properties} properties · ${money(a.deal.amount)} ARR`),
     slack.context(`<${hubUrl(`/accounts/${a.id}`)}|Open in Reeco Hub>`),
   ]);
   return se;
 }
 
-export async function changeDealStage(accountId, stage, actor, fields = {}) {
+export async function changeDealStage(accountId, stage, actor, fields = {}, tz = 'UTC') {
   const a = getAccount(accountId);
   need(DEAL_STAGES.some((s) => s.id === stage), 400, 'Invalid stage');
   if (stage === a.deal.stage) return { account: a };
@@ -111,8 +125,9 @@ export async function changeDealStage(accountId, stage, actor, fields = {}) {
   } else if (stage === 'closedlost') {
     announce(`${a.name} marked as lost (${a.deal.fields.lostReason}${a.deal.fields.competitor ? `: ${a.deal.fields.competitor}` : ''}). The reason is in HubSpot for the win/loss report.`, { icon: 'i-x', accountId: a.id });
   } else if (stage === 'presentationscheduled' || (a.deal.fields.se && a.deal.fields.se !== seBefore)) {
-    const se = await loopInSe(a, actor);
-    announce(`${a.name} moved to ${stageLabel(stage)}.${se ? ` ${se.name} (${se.title}) got the demo details in Slack.` : ''}`, { icon: 'i-arrow', accountId: a.id });
+    const se = await loopInSe(a, actor, tz);
+    const invite = stage === 'presentationscheduled' && fields.sendInvite !== false && fields.sendInvite !== 'false' ? await bookDemo(a, actor, tz) : null;
+    announce(`${a.name} moved to ${stageLabel(stage)}.${invite ? ` ${a.contact.name}${se ? ` and ${se.name}` : ''} got the calendar invite with a Google Meet link.` : ''}${se ? ` ${se.name} (${se.title}) has the demo details in Slack.` : ''}`, { icon: invite ? 'i-video' : 'i-arrow', accountId: a.id });
   } else {
     announce(`${a.name} moved to ${stageLabel(stage)}.${Object.keys(incoming).length ? ' Deal details saved to HubSpot.' : ''}`, { icon: 'i-arrow', accountId: a.id });
   }
@@ -121,7 +136,7 @@ export async function changeDealStage(accountId, stage, actor, fields = {}) {
 }
 
 // Fill in deal details without changing the stage (e.g. a missing SE or a new close date).
-export async function updateDealFields(accountId, fields, actor) {
+export async function updateDealFields(accountId, fields, actor, tz = 'UTC') {
   const a = getAccount(accountId);
   const incoming = cleanFields(fields);
   need(Object.keys(incoming).length, 400, 'Nothing to save');
@@ -129,7 +144,7 @@ export async function updateDealFields(accountId, fields, actor) {
   failIfRejected(await hubspot.updateDeal(a.deal.id, hsProps(incoming), 'Update deal details', 'Saved the deal details'));
   applyFields(a, incoming);
   await track('deal.fields_updated', a.id, actor, { fields: Object.keys(incoming) });
-  const se = a.deal.fields.se && a.deal.fields.se !== seBefore ? await loopInSe(a, actor) : null;
+  const se = a.deal.fields.se && a.deal.fields.se !== seBefore ? await loopInSe(a, actor, tz) : null;
   const what = Object.keys(incoming).length === 1 && incoming.closeDate
     ? `Close date for ${a.name} moved to ${new Date(a.deal.closeDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`
     : `${a.name}'s deal details saved to HubSpot.`;
@@ -749,6 +764,68 @@ export async function startSavePlan(accountId, text, actor) {
   announce(`Save plan started for ${a.name}. It's in HubSpot${ae ? `, and ${ae.name} (AE) was told in Slack` : ''}.`, { icon: 'i-alert', tone: 'info', accountId: a.id });
   changed(a.id);
   return { account: a };
+}
+
+// ---------------------------------------------------------------- meetings (Google Calendar + Meet)
+
+const userByName = (name) => USERS.find((u) => u.name === name) ?? PEOPLE.solutionsEngineers.find((p) => p.name === name);
+// Times are shown in the booker's own time zone (the browser sends it); UTC if unknown.
+const validTz = (tz) => { try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return tz; } catch { return 'UTC'; } };
+const fmtWhen = (iso, tz = 'UTC') => new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: validTz(tz) }) + (validTz(tz) === 'UTC' ? ' UTC' : '');
+
+// Books a meeting on the organizer's calendar with a Meet link, emails the invite, and logs it in HubSpot.
+// `team` are hub people by name; the account's contact is invited when `withContact` is set.
+export async function scheduleMeeting(accountId, { title, start, minutes = 30, team = [], withContact = true, agenda = '', tz = 'UTC' }, actor) {
+  const a = getAccount(accountId);
+  need(title?.trim(), 400, 'Give the meeting a title');
+  const startAt = start ? new Date(start) : new Date();
+  need(!Number.isNaN(+startAt), 400, 'Pick a valid date and time');
+  need(+startAt > Date.now() - 10 * 60_000, 400, "That time is in the past. Pick a new one, or choose 'Now'.");
+  minutes = Math.min(240, Math.max(10, Number(minutes) || 30));
+  const endAt = new Date(+startAt + minutes * 60_000);
+  const organizer = userByName(actor);
+  const people = [...new Set([actor, ...team])].map(userByName).filter(Boolean);
+  const attendees = [...(withContact ? [{ name: a.contact.name, email: a.contact.email }] : []), ...people.map((p) => ({ name: p.name, email: p.email }))];
+  need(attendees.length > 1, 400, 'Invite at least one other person');
+
+  const ev = await google.createEvent({
+    organizer: organizer?.email ?? 'hub@reeco.com', summary: title.trim(),
+    description: `${agenda.trim() ? `${agenda.trim()}\n\n` : ''}Booked from Reeco Hub · ${a.name}`,
+    start: startAt.toISOString(), end: endAt.toISOString(), attendees,
+  });
+  failIfRejected(ev);
+  const link = ev.response.hangoutLink;
+  await hubspot.logMeeting(a.hubspotCompanyId, a.status === 'Prospect' || !['closedwon', 'closedlost'].includes(a.deal.stage) ? a.deal.id : null,
+    { title: title.trim(), body: agenda.trim(), start: startAt.toISOString(), end: endAt.toISOString(), link });
+  const meeting = { id: `mtg_${ev.response.id}`, title: title.trim(), start: startAt.toISOString(), end: endAt.toISOString(), link, organizer: actor, attendees: attendees.map((x) => x.name), createdAt: now() };
+  a.meetings.push(meeting);
+  a.meetings.sort((x, y) => x.start.localeCompare(y.start));
+  if (withContact) a.deal.activities.unshift({ type: 'meeting', dir: 'out', at: now(), subject: title.trim() });
+  await track('meeting.scheduled', a.id, actor, { minutes, attendees: attendees.length });
+  const soon = +startAt - Date.now() < 5 * 60_000;
+  announce(`${soon ? 'Call started' : `Meeting booked for ${fmtWhen(startAt, tz)}`}${withContact ? ` with ${a.contact.name}` : ''}. ${attendees.length - 1 === 1 ? 'The invite' : 'Invites'} went out by email with a Google Meet link, and it's logged in HubSpot.`, { icon: 'i-video', accountId: a.id });
+  changed(a.id);
+  return { meeting };
+}
+
+// Support: "let's jump on a quick call". A Meet room, and the link goes to the customer as a reply.
+export async function quickCall(conversationId, text, actor) {
+  const { account: a, conversation: c } = getConversation(conversationId);
+  need(c.state === 'open', 400, 'This conversation is closed');
+  const space = await google.createSpace(userByName(actor)?.email ?? 'hub@reeco.com');
+  failIfRejected(space);
+  const link = space.response.meetingUri;
+  const body = `${(text?.trim() || "It might be quicker to talk this through. Can you join me on a short video call?")}\n\n${link}`;
+  failIfRejected(await intercom.reply(c.id, body));
+  c.messages.push({ from: 'agent', author: actor, text: body, at: now() });
+  c.updatedAt = now();
+  c.slaDueAt = null;
+  if (!c.assignee) await assign(c.id, actor, actor, { quiet: true });
+  a.meetings.push({ id: `mtg_${space.response.meetingCode}`, title: `Quick call: ${c.subject}`, start: now(), end: new Date(Date.now() + 30 * 60_000).toISOString(), link, organizer: actor, attendees: [customerOf(c), actor], createdAt: now(), instant: true });
+  await track('conversation.video_call', a.id, actor, { conversationId: c.id });
+  announce(`Video call link sent to ${first(customerOf(c))} in the conversation. Join when you're ready.`, { icon: 'i-video', accountId: a.id });
+  changed(a.id);
+  return { link };
 }
 
 // ---------------------------------------------------------------- CS: feature requests (Jira PROD)

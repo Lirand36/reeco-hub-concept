@@ -12,6 +12,7 @@ import * as intercom from './src/connectors/intercom.js';
 import * as slack from './src/connectors/slack.js';
 import * as snowflake from './src/connectors/snowflake.js';
 import * as claude from './src/connectors/claude.js';
+import * as google from './src/connectors/google.js';
 import { CLOSE_REASONS, CONFIG, DEAL_STAGES, FR_STATUSES, ONBOARDING_STEPS, PEOPLE, SILENT_DAYS, STAGE_GATES, USERS, db, reset } from './src/store.js';
 import { dealView, fieldValue, isOpen } from './src/deals.js';
 import { csView } from './src/cs.js';
@@ -119,6 +120,7 @@ const integrations = () => [
   { id: 'jira', name: 'Jira', role: 'Escalations & onboarding epics', live: jira.isLive(), env: ['JIRA_BASE_URL', 'JIRA_EMAIL', 'JIRA_API_TOKEN'] },
   { id: 'slack', name: 'Slack', role: 'Alerts, approvals, onboarding channels', live: slack.isLive(), env: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_CHANNEL_*'] },
   { id: 'snowflake', name: 'Snowflake', role: 'Product usage in, hub events out', live: snowflake.isLive(), env: ['SNOWFLAKE_ACCOUNT', 'SNOWFLAKE_TOKEN', 'SNOWFLAKE_WAREHOUSE'] },
+  { id: 'google', name: 'Google Calendar & Meet', role: 'Meeting invites and video calls', live: google.isLive(), env: ['GOOGLE_SERVICE_ACCOUNT_JSON'] },
   { id: 'claude', name: 'Claude', role: 'AI assist: summaries & draft replies', live: claude.isLive(), env: ['ANTHROPIC_API_KEY', 'CLAUDE_MODEL'] },
 ];
 
@@ -132,6 +134,7 @@ const GUARDS = [
   ['GET', /^\/api\/(log|activity)$/, 'log.view'],
   ['POST', /^\/api\/accounts\/[\w-]+\/(deal-stage|deal-fields|follow-up|ask-colleague|discount)$/, 'deal.edit'],
   ['POST', /^\/api\/accounts\/[\w-]+\/notes$/, 'accounts.note'],
+  ['POST', /^\/api\/accounts\/[\w-]+\/meetings$/, 'meetings.create'],
   ['POST', /^\/api\/accounts\/[\w-]+\/tickets$/, 'tickets.create'],
   ['POST', /^\/api\/(accounts\/[\w-]+\/(sync-usage|steps\/\w+)|onboarding\/sync)$/, 'onboarding.edit'],
   ['POST', /^\/api\/anomalies\//, 'anomalies.edit'],
@@ -195,8 +198,8 @@ const routes = [
     return CLOSE_REASONS.map((r) => ({ ...r, count: counts[r.id] }));
   }],
 
-  ['POST', /^\/api\/accounts\/([\w-]+)\/deal-stage$/, (req, [id], b) => svc.changeDealStage(id, b.stage, actorOf(req).name, b.fields)],
-  ['POST', /^\/api\/accounts\/([\w-]+)\/deal-fields$/, (req, [id], b) => svc.updateDealFields(id, b.fields, actorOf(req).name)],
+  ['POST', /^\/api\/accounts\/([\w-]+)\/deal-stage$/, (req, [id], b) => svc.changeDealStage(id, b.stage, actorOf(req).name, b.fields, b.tz)],
+  ['POST', /^\/api\/accounts\/([\w-]+)\/deal-fields$/, (req, [id], b) => svc.updateDealFields(id, b.fields, actorOf(req).name, b.tz)],
   ['POST', /^\/api\/accounts\/([\w-]+)\/follow-up$/, (req, [id], b) => svc.sendFollowUp(id, b, actorOf(req).name)],
   ['POST', /^\/api\/accounts\/([\w-]+)\/ask-colleague$/, (req, [id], b) => svc.askColleague(id, b.wonId, actorOf(req).name)],
   ['POST', /^\/api\/accounts\/([\w-]+)\/discount$/, (req, [id], b) => svc.requestDiscount(id, b, actorOf(req).name)],
@@ -205,6 +208,8 @@ const routes = [
   ['POST', /^\/api\/accounts\/([\w-]+)\/sync-usage$/, (req, [id]) => svc.syncUsage(id, actorOf(req).name)],
   ['POST', /^\/api\/anomalies\/scan$/, (req) => svc.detectAnomalies(actorOf(req).name)],
   ['POST', /^\/api\/anomalies\/([\w-]+)\/ack$/, (req, [id], b) => svc.acknowledgeAnomaly(id, actorOf(req).name, b?.note)],
+  ['POST', /^\/api\/accounts\/([\w-]+)\/meetings$/, (req, [id], b) => svc.scheduleMeeting(id, b, actorOf(req).name)],
+  ['POST', /^\/api\/conversations\/([\w-]+)\/call$/, (req, [id], b) => svc.quickCall(id, b?.text, actorOf(req).name)],
   ['POST', /^\/api\/accounts\/([\w-]+)\/save-plan$/, (req, [id], b) => svc.startSavePlan(id, b.text, actorOf(req).name)],
   ['POST', /^\/api\/feature-requests\/([\w-]+)\/tell$/, (req, [id], b) => svc.tellCustomer(id, b.accountId, actorOf(req).name)],
   // Demo: behaves exactly like the Jira webhook moving the issue one status forward

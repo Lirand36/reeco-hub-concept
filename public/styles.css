@@ -30,6 +30,7 @@
   --slack: #E01E5A;
   --snowflake: #29B5E8;
   --claude: #D97757;
+  --google: #1A73E8;
 
   --radius: 12px;
   --shadow: 0 1px 2px rgba(15, 20, 27, .04), 0 6px 20px rgba(15, 20, 27, .04);
@@ -162,6 +163,7 @@ textarea.input { resize: vertical; min-height: 44px; }
 .src.slack, .toast.slack { --dot: var(--slack); }
 .src.snowflake, .toast.snowflake { --dot: var(--snowflake); }
 .src.claude, .toast.claude { --dot: var(--claude); }
+.src.google, .toast.google { --dot: var(--google); }
 
 .bar { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
 .bar > span { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
@@ -763,3 +765,12 @@ details.onb-card[open] .onb-toggle { visibility: hidden; }
 @media (max-width: 760px) { .table td > select.input.sm:first-child, .table td.pl-next > .sa:first-child { margin-top: 0; } }
 .apr-decision > .row:first-child { margin-top: -5px; }
 @media (max-width: 760px) { .apr-decision > .row:first-child { margin-top: 0; } }
+
+/* meetings */
+.meet-when { margin-bottom: 12px; }
+.meet-link { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.meet-link > .ico { width: 16px; height: 16px; color: var(--google); }
+.list-item.meeting > .ico { width: 16px; height: 16px; color: var(--google); flex: none; }
+.list-item.meeting.past { opacity: .7; }
+.invite-opt { display: flex; border-radius: 10px; margin: 4px 0 8px; }
+.invite-opt .ico { width: 15px; height: 15px; color: var(--google); }
