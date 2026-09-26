@@ -30,7 +30,13 @@ export function postMessage(channel, text, blocks, action = 'Post message', wher
 }
 
 // Direct message to a person (e.g. the account's CSM).
-export const dm = (slackId, name, text, blocks) => postMessage(slackId, text, blocks, 'Direct message', `a DM to ${name}`);
+// Demo: with SLACK_DM_USER_ID set, every DM goes to that one person instead, labelled with who it was for.
+export const dmRedirect = () => process.env.SLACK_DM_USER_ID || null;
+export function dm(slackId, name, text, blocks) {
+  const to = isLive() && dmRedirect() ? dmRedirect() : slackId;
+  const label = to !== slackId ? [context(`:bust_in_silhouette: For *${name}* (demo: all DMs come to you)`)] : [];
+  return postMessage(to, to !== slackId ? `For ${name}: ${text}` : text, blocks ? [...label, ...blocks] : blocks, 'Direct message', `a DM to ${name}`);
+}
 
 export function updateMessage(channel, ts, text, blocks) {
   return send({
@@ -46,7 +52,15 @@ export function updateMessage(channel, ts, text, blocks) {
   });
 }
 
-export function createChannel(name) {
+// A channel name can already exist (e.g. from an earlier demo run); then try a numbered one.
+export async function createChannel(name) {
+  let entry = await createChannelOnce(name);
+  for (let n = 2; isLive() && !entry.ok && entry.response?.error === 'name_taken' && n <= 5; n++) entry = await createChannelOnce(`${name}-${n}`);
+  return entry;
+}
+export const authTest = () => send({ system: 'slack', action: 'Check connection', summary: 'Checked the Slack connection', method: 'POST', url: `${BASE}/auth.test`, headers: auth(), body: {}, live: isLive(), mockResponse: { ok: true, team: 'Demo', user: 'reeco-hub' } });
+
+function createChannelOnce(name) {
   return send({
     system: 'slack',
     action: `Create channel #${name}`,

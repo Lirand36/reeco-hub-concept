@@ -19,10 +19,21 @@ Reeco Hub is one internal workspace for Reeco's Sales, Support and Customer Succ
 ```bash
 npm install         # one dependency: the Anthropic SDK
 npm start           # Node 22+
+npm test            # email safety + live connector checks (no network)
 # → http://localhost:3000
 ```
 
 Everything runs in **mock mode** by default: each request is built exactly as the real API expects, shown in the Activity log (under "Technical details"), and answered with a realistic fake response. To connect a real sandbox, copy `.env.example` to `.env` and fill in that system's credentials. Each system goes live on its own.
+
+## Going live (HubSpot, Slack, Google Calendar)
+
+Each system switches from mock to live on its own once its keys are in Render → Environment. **Connections** (as the Admin) has step-by-step setup for each, a **Test connection** button, and **Connect Google**.
+
+- **HubSpot** (use a test account): a Private App token (`HUBSPOT_TOKEN`). On start, and after *Reset demo data*, the hub finds or creates the demo companies, contacts and deals and adds its “Reeco:” deal fields, then works with their real IDs.
+- **Slack**: a bot token and signing secret. `SLACK_DM_USER_ID` sends every DM (to Maya, Dana, the SEs…) to you, labelled with who it was for.
+- **Google Calendar** (a personal Gmail works): an OAuth client, then *Connect Google*; paste the token it shows as `GOOGLE_REFRESH_TOKEN`.
+
+**Email safety.** With Google live, invites are emailed **only** to `GOOGLE_INVITE_EMAIL`; customers and team members are listed inside the invite instead, and with no `GOOGLE_INVITE_EMAIL` no invite emails are sent at all. A last check blocks any request that would email another address. `npm test` proves it (and checks the HubSpot and Slack setup) against fake servers.
 
 ## Deploy to Render (shareable link)
 

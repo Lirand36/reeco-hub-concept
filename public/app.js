@@ -1815,20 +1815,54 @@ async function renderLog(query = new URLSearchParams()) {
 }
 
 // ---------- connections ----------
+// How to connect each system, in plain steps (shown on the Connections page).
+const SETUP = {
+  hubspot: [
+    'In your HubSpot <b>test</b> account: Settings → Integrations → Private Apps → <i>Create a private app</i>.',
+    'Scopes: <code>crm.objects.companies</code>, <code>crm.objects.contacts</code>, <code>crm.objects.deals</code> (read + write) and <code>crm.schemas.deals</code> (read + write).',
+    'Copy the access token into Render → Environment as <code>HUBSPOT_TOKEN</code>, then save (Render restarts the hub).',
+    'On start, the hub finds or creates the demo companies, contacts and deals in that account, and adds its “Reeco:” deal fields.',
+  ],
+  slack: [
+    'Create an app at <a class="link" href="https://api.slack.com/apps" target="_blank" rel="noopener">api.slack.com/apps</a> → From scratch, in your workspace.',
+    'OAuth & Permissions → Bot Token Scopes: <code>chat:write</code>, <code>chat:write.public</code>, <code>channels:manage</code>, <code>im:write</code>. Install to the workspace.',
+    'Render → Environment: <code>SLACK_BOT_TOKEN</code> (xoxb-…), <code>SLACK_SIGNING_SECRET</code> (Basic Information), and <code>SLACK_DM_USER_ID</code> = your member ID (Slack → your profile → ⋯ → Copy member ID). Every DM then comes to you.',
+    'For approval buttons: Interactivity → On, Request URL <code>ORIGIN/webhooks/slack</code>, and <code>SLACK_APPROVER_IDS</code> = your member ID.',
+    'Create <code>#deals</code>, <code>#deal-desk</code> and <code>#support-escalations</code> (or set <code>SLACK_CHANNEL_*</code> to other channels).',
+  ],
+  google: [
+    'In <a class="link" href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>: create a project and enable the <b>Google Calendar API</b>.',
+    'OAuth consent screen: External, Testing; add your Gmail under Test users.',
+    'Credentials → Create OAuth client ID → Web application. Authorized redirect URI: <code>ORIGIN/oauth/google/callback</code>.',
+    'Render → Environment: <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, and <code>GOOGLE_INVITE_EMAIL</code> = your own email (the only address that is ever emailed).',
+    'Back here, click <b>Connect Google</b>, approve, and paste the token it shows into Render as <code>GOOGLE_REFRESH_TOKEN</code>.',
+  ],
+};
+
 function renderConnections() {
   const origin = location.origin;
+  const steps = (id) => SETUP[id] ? `<details class="conn-setup"><summary class="link small">How to connect</summary><ol class="small">${SETUP[id].map((x) => `<li>${x.replaceAll('ORIGIN', esc(origin))}</li>`).join('')}</ol></details>` : '';
   view.innerHTML = `
     <div class="page-head">
-      <div><h1>Connections</h1><p class="muted">Systems without credentials run in <b>mock</b> mode: every request is built exactly as the real API expects, but never leaves the server.</p></div>
+      <div><h1>Connections</h1><p class="muted">Each system runs in <b>mock</b> mode until its keys are added in Render; then it goes live on its own.</p></div>
       <button class="btn danger" id="reset">${icon('i-reset')}Reset demo data</button>
     </div>
+    <div class="card callout conn-safety">${icon('i-alert')}<div class="grow small"><b>Demo safety.</b> With Google live, meeting invites are emailed <b>only</b> to <code>GOOGLE_INVITE_EMAIL</code> (customers and team are listed inside the invite instead), and with Slack live every DM goes to <code>SLACK_DM_USER_ID</code>. HubSpot only stores records; it sends nothing.</div></div>
     <div class="conn-grid">
       ${state.meta.integrations.map((i) => `
-        <div class="card conn">
+        <div class="card conn" data-conn="${esc(i.id)}">
           <div class="row"><span class="logo" style="background:${SYSTEMS[i.id].color}">${SYSTEMS[i.id].letter}</span>
             <div class="grow"><strong>${esc(i.name)}</strong><div class="muted xs">${esc(i.role)}</div></div>
-            <span class="chip ${i.live ? 'good' : 'warn'}">${i.live ? 'Live' : 'Mock'}</span></div>
+            <span class="chip ${i.live ? 'good' : i.connect ? 'info' : 'warn'}">${i.live ? 'Live' : i.connect ? 'Ready to connect' : 'Mock'}</span></div>
+          ${(i.notes ?? []).map((n) => `<div class="small">${esc(n)}</div>`).join('')}
           <div class="mono muted xs">${i.env.map(esc).join('<br>')}</div>
+          <div class="row" style="gap:6px">
+            ${i.connect ? `<button class="btn sm primary" data-google-connect>${icon('i-plug')}Connect Google</button>` : ''}
+            ${i.testable ? `<button class="btn sm" data-test="${esc(i.id)}">Test connection</button>` : ''}
+            ${i.id === 'hubspot' && i.live ? '<button class="btn sm" data-hs-sync>Link demo records</button>' : ''}
+          </div>
+          <div class="conn-result small" hidden></div>
+          ${steps(i.id)}
         </div>`).join('')}
     </div>
     <div class="card card-pad" style="margin-top:16px">
@@ -1838,6 +1872,13 @@ function renderConnections() {
 POST ${esc(origin)}/webhooks/slack      # Slack app → Interactivity request URL (approval buttons)
 POST ${esc(origin)}/webhooks/jira       # Jira: issue updated (feature request status)</pre>
     </div>`;
+  const show = (card, r) => { const el = $('.conn-result', card); el.hidden = false; el.className = `conn-result small ${r.ok ? 'tone-good' : 'tone-bad'}`; el.textContent = r.message; };
+  $$('[data-test]').forEach((b) => b.addEventListener('click', () => run(b, async () => show(b.closest('.conn'), await api(`/api/connections/${b.dataset.test}/test`, { method: 'POST' })))));
+  $('[data-hs-sync]')?.addEventListener('click', (e) => run(e.currentTarget, async () => {
+    const r = await api('/api/connections/hubspot/sync', { method: 'POST' });
+    show(e.target.closest('.conn'), { ok: true, message: `${r.accounts} demo accounts linked; ${r.created} records created.` });
+  }));
+  $('[data-google-connect]')?.addEventListener('click', (e) => run(e.currentTarget, async () => { location.href = (await api('/api/connections/google/start', { method: 'POST' })).url; }));
   $('#reset').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     if (!(await confirmDialog({ title: 'Reset demo data?', body: '<p class="muted">Every account, conversation and approval goes back to the starting point for everyone using this link.</p>', confirmLabel: 'Reset', danger: true }))) return;

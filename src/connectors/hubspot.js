@@ -78,3 +78,18 @@ export function logMeeting(companyId, dealId, { title, body, start, end, link })
     mockResponse: () => ({ id: String(Math.floor(Math.random() * 1e10)), createdAt: new Date().toISOString() }),
   });
 }
+
+// ---------------------------------------------------------------- live setup helpers (see src/hubspot-sync.js)
+
+const call = (method, path, body, action, summary, mock) => send({
+  system: 'hubspot', action, summary, method, url: `${BASE}${path}`, headers: auth(), body, live: isLive(), mockResponse: mock ?? { results: [] },
+});
+
+export const listDealProperties = () => call('GET', '/crm/v3/properties/deals', undefined, 'Read deal fields', 'Checked which deal fields exist');
+export const createDealProperty = (p) => call('POST', '/crm/v3/properties/deals', p, 'Create deal field', `Added the deal field “${p.label}”`);
+export const search = (object, property, value) => call('POST', `/crm/v3/objects/${object}/search`,
+  { filterGroups: [{ filters: [{ propertyName: property, operator: 'EQ', value }] }], limit: 1 },
+  `Find ${object.replace(/s$/, '')}`, `Looked up the ${object.replace(/s$/, '')} “${value}”`);
+export const create = (object, properties, associations = []) => call('POST', `/crm/v3/objects/${object}`, { properties, associations },
+  `Create ${object.replace(/s$/, '')}`, `Created the ${object.replace(/s$/, '')} “${properties.name ?? properties.dealname ?? properties.email}”`);
+export const accountInfo = () => call('GET', '/account-info/v3/details', undefined, 'Check connection', 'Checked the HubSpot connection', { portalId: 0 });

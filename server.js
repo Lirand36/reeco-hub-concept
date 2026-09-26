@@ -16,6 +16,8 @@ import * as google from './src/connectors/google.js';
 import { CLOSE_REASONS, CONFIG, DEAL_STAGES, FR_STATUSES, ONBOARDING_STEPS, PEOPLE, SILENT_DAYS, STAGE_GATES, USERS, db, reset } from './src/store.js';
 import { dealView, fieldValue, isOpen } from './src/deals.js';
 import { csView } from './src/cs.js';
+import { syncToHubspot } from './src/hubspot-sync.js';
+import { randomBytes } from 'node:crypto';
 import { HEALTH_WEIGHTS, anomalyText, computeHealth } from './src/health.js';
 import * as svc from './src/services.js';
 import { goodMorning } from './src/home.js';
@@ -115,14 +117,61 @@ const frView = (f) => ({
 });
 
 const integrations = () => [
-  { id: 'hubspot', name: 'HubSpot', role: 'CRM: deals, notes', live: hubspot.isLive(), env: ['HUBSPOT_TOKEN'] },
+  { id: 'hubspot', name: 'HubSpot', role: 'CRM: deals, notes, meetings', live: hubspot.isLive(), env: ['HUBSPOT_TOKEN'], testable: true },
   { id: 'intercom', name: 'Intercom', role: 'Support conversations', live: intercom.isLive(), env: ['INTERCOM_TOKEN', 'INTERCOM_ADMIN_ID', 'INTERCOM_CLIENT_SECRET'] },
   { id: 'jira', name: 'Jira', role: 'Escalations & onboarding epics', live: jira.isLive(), env: ['JIRA_BASE_URL', 'JIRA_EMAIL', 'JIRA_API_TOKEN'] },
-  { id: 'slack', name: 'Slack', role: 'Alerts, approvals, onboarding channels', live: slack.isLive(), env: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_CHANNEL_*'] },
+  { id: 'slack', name: 'Slack', role: 'Alerts, approvals, onboarding channels', live: slack.isLive(), env: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_DM_USER_ID', 'SLACK_APPROVER_IDS', 'SLACK_CHANNEL_*'], testable: true,
+    notes: slack.isLive() ? [slack.dmRedirect() ? `All DMs go to ${slack.dmRedirect()}` : 'DMs go to the demo IDs; set SLACK_DM_USER_ID to receive them yourself'] : [] },
   { id: 'snowflake', name: 'Snowflake', role: 'Product usage in, hub events out', live: snowflake.isLive(), env: ['SNOWFLAKE_ACCOUNT', 'SNOWFLAKE_TOKEN', 'SNOWFLAKE_WAREHOUSE'] },
-  { id: 'google', name: 'Google Calendar & Meet', role: 'Meeting invites and video calls', live: google.isLive(), env: ['GOOGLE_SERVICE_ACCOUNT_JSON'] },
+  { id: 'google', name: 'Google Calendar & Meet', role: 'Meeting invites and video calls', live: google.isLive(), env: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'GOOGLE_INVITE_EMAIL'], testable: true,
+    connect: google.isConfigured() && !google.isLive(),
+    notes: google.isLive() ? [`Calendar: ${google.connectedAs() ?? 'connected'}`, google.inviteEmail() ? `Invites are emailed only to ${google.inviteEmail()}` : 'No invite emails are sent (set GOOGLE_INVITE_EMAIL to receive them)'] : [] },
   { id: 'claude', name: 'Claude', role: 'AI assist: summaries & draft replies', live: claude.isLive(), env: ['ANTHROPIC_API_KEY', 'CLAUDE_MODEL'] },
 ];
+
+// ---------------------------------------------------------------- connections
+
+const oauthStates = new Map(); // one-time "Connect Google" states → expiry
+const redirectUri = (req) => `${process.env.PUBLIC_URL || `${req.headers['x-forwarded-proto'] ?? 'http'}://${req.headers.host}`}/oauth/google/callback`;
+
+// A small read-only call per system, with a plain answer for the Connections page.
+async function testConnection(id) {
+  const fail = (msg) => ({ ok: false, message: msg });
+  try {
+    if (id === 'hubspot') {
+      if (!hubspot.isLive()) return fail('Not connected: add HUBSPOT_TOKEN in Render.');
+      const r = await hubspot.accountInfo();
+      return r.ok ? { ok: true, message: `Connected to HubSpot account ${r.response.portalId}.` } : fail(`HubSpot said: ${r.response?.message ?? r.status}`);
+    }
+    if (id === 'slack') {
+      if (!slack.isLive()) return fail('Not connected: add SLACK_BOT_TOKEN in Render.');
+      const r = await slack.authTest();
+      return r.ok ? { ok: true, message: `Connected to the ${r.response.team} workspace as @${r.response.user}.${slack.dmRedirect() ? ` DMs go to ${slack.dmRedirect()}.` : ''}` } : fail(`Slack said: ${r.response?.error ?? r.status}`);
+    }
+    if (id === 'google') {
+      if (!google.isLive()) return fail(google.isConfigured() ? 'Not connected yet: click “Connect Google”.' : 'Not connected: add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Render.');
+      const email = await google.whoAmI();
+      return { ok: true, message: `Connected to ${email}'s calendar. ${google.inviteEmail() ? `Invites are emailed only to ${google.inviteEmail()}.` : 'No invite emails will be sent.'}` };
+    }
+    return fail('No test for this system yet.');
+  } catch (e) { return fail(e.message); }
+}
+
+// Google sends the person back here after they approve access.
+async function googleCallback(req, res, url) {
+  const page = (title, body) => { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><body style="font:15px/1.5 system-ui;max-width:620px;margin:48px auto;padding:0 16px"><h1 style="font-size:22px">${title}</h1>${body}<p><a href="/#/connections">Back to Reeco Hub</a></p></body>`); };
+  const state = url.searchParams.get('state');
+  if (!state || !oauthStates.has(state) || oauthStates.get(state) < Date.now()) return page('That link expired', '<p>Start again from Connections → Connect Google.</p>');
+  oauthStates.delete(state);
+  if (url.searchParams.get('error')) return page('Google access was not granted', `<p>${url.searchParams.get('error')}</p>`);
+  try {
+    const token = await google.exchangeCode(url.searchParams.get('code'), redirectUri(req));
+    page('Google is connected', `<p>Meetings will be created on <b>${google.connectedAs()}</b>'s calendar.</p>
+      <p><b>One more step so it survives restarts:</b> in Render → Environment, add <code>GOOGLE_REFRESH_TOKEN</code> with this value, then save:</p>
+      <textarea readonly rows="3" style="width:100%;font:13px monospace" onclick="this.select()">${token}</textarea>
+      <p style="color:#666">Keep it private: it lets the hub create events on this calendar.</p>`);
+  } catch (e) { page('Google connection failed', `<p>${e.message}</p>`); }
+}
 
 // Who may call what (roles in src/access.js). The first matching rule wins; no rule means everyone.
 // The UI hides what a role can't use, but this is what actually enforces it.
@@ -142,6 +191,7 @@ const GUARDS = [
   ['POST', /^\/api\/feature-requests\//, 'fr.edit'],
   ['POST', /^\/api\/conversations\//, 'inbox.work'],
   ['POST', /^\/api\/approvals\//, 'approvals.decide'],
+  ['POST', /^\/api\/connections\//, 'connections.view'],
 ];
 function guard(req, method, pathname) {
   const rule = GUARDS.find(([m, re]) => m === method && re.test(pathname));
@@ -238,8 +288,18 @@ const routes = [
   ['POST', /^\/api\/conversations\/([\w-]+)\/ai$/, (req, [id]) => svc.aiAssist(id, actorOf(req).name)],
   ['POST', /^\/api\/conversations\/([\w-]+)\/escalate$/, (req, [id]) => svc.escalate(id, actorOf(req).name)],
   ['POST', /^\/api\/approvals\/([\w-]+)$/, (req, [id], b) => svc.decideApproval(id, b.decision, actorOf(req).name, 'hub')],
-  ['POST', /^\/api\/reset$/, () => {
+  // Connections: test each live system, re-run the HubSpot setup, connect Google
+  ['POST', /^\/api\/connections\/(\w+)\/test$/, async (req, [id]) => testConnection(id)],
+  ['POST', /^\/api\/connections\/hubspot\/sync$/, async (req) => syncToHubspot(actorOf(req).name)],
+  ['POST', /^\/api\/connections\/google\/start$/, (req) => {
+    if (!google.isConfigured()) throw new svc.HttpError(400, 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Render first.');
+    const state = randomBytes(16).toString('hex');
+    oauthStates.set(state, Date.now() + 10 * 60_000);
+    return { url: google.authUrl(redirectUri(req), state) };
+  }],
+  ['POST', /^\/api\/reset$/, async () => {
     reset();
+    await syncToHubspot().catch((e) => console.error('HubSpot sync failed', e.message));
     clearLog();
     clearActivities();
     bus.emit('changed', { reset: true });
@@ -312,6 +372,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (pathname === '/api/events') return sse(req, res);
     if (pathname === '/healthz') return json(res, 200, { ok: true });
+    if (pathname === '/oauth/google/callback') return await googleCallback(req, res, new URL(req.url, 'http://localhost'));
     const hook = pathname.match(/^\/webhooks\/(\w+)/);
     if (hook && req.method === 'POST') return await withActivity({ slack: 'Slack', jira: 'Jira' }[hook[1]] ?? 'Intercom', () => handleWebhook(req, res, hook[1]), { slack: 'sales', jira: 'cs' }[hook[1]] ?? 'support');
 
@@ -338,4 +399,7 @@ setInterval(() => withActivity('Snowflake monitor', () => svc.detectAnomalies('S
 server.listen(PORT, () => {
   console.log(`Reeco Hub → http://localhost:${PORT}`);
   console.log(integrations().map((i) => `${i.name}: ${i.live ? 'live' : 'mock'}`).join(' · '));
+  // Live HubSpot: link the demo accounts to real records (creates them in your test account if missing)
+  syncToHubspot().then((r) => r && console.log(`HubSpot linked: ${r.accounts} accounts, ${r.created} records created`)).catch((e) => console.error('HubSpot sync failed:', e.message));
+  if (google.isLive()) google.whoAmI().catch((e) => console.error('Google:', e.message));
 });

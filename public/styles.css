@@ -269,7 +269,7 @@ textarea.input { resize: vertical; min-height: 44px; }
 pre.code { margin: 0; padding: 12px; border-radius: 8px; background: var(--surface-2); overflow: auto; max-height: 340px; font-family: var(--mono); font-size: 12px; line-height: 1.55; }
 
 /* ---------- connections ---------- */
-.conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; align-items: start; }
 .conn { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
 .logo { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-weight: 700; flex: none; }
 
@@ -774,3 +774,10 @@ details.onb-card[open] .onb-toggle { visibility: hidden; }
 .list-item.meeting.past { opacity: .7; }
 .invite-opt { display: flex; border-radius: 10px; margin: 4px 0 8px; }
 .invite-opt .ico { width: 15px; height: 15px; color: var(--google); }
+
+/* connections */
+.conn-setup summary { cursor: pointer; }
+.conn-setup ol { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.conn-setup code, .conn-safety code { font-family: var(--mono); font-size: 12px; background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
+.conn-safety { align-items: flex-start; }
+.conn-safety > .ico { color: var(--warn); margin-top: 2px; }

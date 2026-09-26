@@ -65,7 +65,14 @@ function cleanFields(fields = {}) {
   }
   return out;
 }
-const hsProps = (fields) => Object.fromEntries(Object.entries(fields).map(([k, v]) => [GATE_FIELDS[k].hs, k === 'closeDate' ? v : Array.isArray(v) ? v.join(';') : String(v)]));
+// HubSpot wants full ISO timestamps for date/time fields; multi-choice values are joined with ';'.
+const hsValue = (k, v) => {
+  if (!v) return '';
+  if (k === 'closeDate') return new Date(`${v}T12:00:00Z`).toISOString();
+  if (GATE_FIELDS[k].type === 'datetime-local') return new Date(`${v}:00Z`).toISOString();
+  return Array.isArray(v) ? v.join(';') : String(v);
+};
+const hsProps = (fields) => Object.fromEntries(Object.entries(fields).filter(([k]) => GATE_FIELDS[k]).map(([k, v]) => [GATE_FIELDS[k].hs, hsValue(k, v)]));
 function applyFields(a, fields) {
   for (const [k, v] of Object.entries(fields)) {
     if (k === 'closeDate') a.deal.closeDate = v ? new Date(`${v}T12:00:00Z`).toISOString() : null;
@@ -198,8 +205,9 @@ async function kickOffOnboarding(a, actor) {
     description: `Closed by ${actor}. ARR ${money(a.deal.amount)}. Contact: ${a.contact.name} (${a.contact.email}). CSM: ${a.csm}`,
   });
 
-  const channelName = `onb-${a.id}`.slice(0, 80);
+  let channelName = `onb-${a.id}`.slice(0, 80);
   const created = await slack.createChannel(channelName);
+  channelName = created.response?.channel?.name ?? channelName; // may be numbered if the name was taken
   const channelId = created.response?.channel?.id ?? `#${channelName}`;
   await slack.postMessage(channelId, `Onboarding kickoff for ${a.name}`, [
     slack.section(`:rocket: *Onboarding kickoff: ${a.name}*\nCSM *${a.csm}* · Jira epic *${epic.response?.key ?? 'n/a'}*`),
@@ -803,7 +811,11 @@ export async function scheduleMeeting(accountId, { title, start, minutes = 30, t
   if (withContact) a.deal.activities.unshift({ type: 'meeting', dir: 'out', at: now(), subject: title.trim() });
   await track('meeting.scheduled', a.id, actor, { minutes, attendees: attendees.length });
   const soon = +startAt - Date.now() < 5 * 60_000;
-  announce(`${soon ? 'Call started' : `Meeting booked for ${fmtWhen(startAt, tz)}`}${withContact ? ` with ${a.contact.name}` : ''}. ${attendees.length - 1 === 1 ? 'The invite' : 'Invites'} went out by email with a Google Meet link, and it's logged in HubSpot.`, { icon: 'i-video', accountId: a.id });
+  // Live Google: only the demo inbox is emailed (see connectors/google.js), so say so plainly.
+  const sent = google.isLive()
+    ? (google.inviteEmail() ? `The invite went to your demo inbox (${google.inviteEmail()}) instead of the attendees` : 'No invite emails were sent (demo mode)')
+    : `${attendees.length - 1 === 1 ? 'The invite' : 'Invites'} went out by email`;
+  announce(`${soon ? 'Call started' : `Meeting booked for ${fmtWhen(startAt, tz)}`}${withContact ? ` with ${a.contact.name}` : ''}. ${sent}, with a Google Meet link, and it's logged in HubSpot.`, { icon: 'i-video', accountId: a.id });
   changed(a.id);
   return { meeting };
 }
